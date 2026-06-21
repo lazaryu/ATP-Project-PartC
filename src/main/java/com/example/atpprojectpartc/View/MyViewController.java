@@ -1,35 +1,49 @@
 package com.example.atpprojectpartc.View;
 
 import com.example.atpprojectpartc.Model.MyModel;
+import com.example.atpprojectpartc.ViewModel.MyViewModel;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Pane;
 
 /**
  * MyViewController is the controller of the main JavaFX view.
- * It handles user events from the GUI.
  */
 public class MyViewController implements IView {
 
     @FXML
     private Label welcomeText;
 
-    private MyModel model;
+    @FXML
+    private Pane mazePane;
+
+    private MazeDisplayer mazeDisplayer;
+    private MyViewModel viewModel;
 
     /**
      * Initializes the controller after the FXML is loaded.
      */
     @FXML
     public void initialize() {
-        model = new MyModel();
+        viewModel = new MyViewModel(new MyModel());
+
+        mazeDisplayer = new MazeDisplayer();
+        mazeDisplayer.setWidth(500);
+        mazeDisplayer.setHeight(500);
+
+        mazePane.getChildren().add(mazeDisplayer);
+
+        displayMessage("Maze Game - click Generate Maze");
     }
 
     /**
-     * Handles a click on the test button.
+     * Handles click on the Generate Maze button.
      */
     @FXML
-    protected void onHelloButtonClick() {
-        model.generateMaze(10, 10);
-        displayMessage("Maze generated successfully! Check the console.");
+    protected void onGenerateMazeClicked() {
+        viewModel.generateMaze(20, 20);
+        mazeDisplayer.setMaze(viewModel.getMaze());
+        displayMessage("Maze generated successfully");
     }
 
     /**

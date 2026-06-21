@@ -10,15 +10,15 @@ public interface IModel {
     /**
      * Generates a new maze.
      *
-     * @param rows number of maze rows
-     * @param columns number of maze columns
+     * @param rows number of rows
+     * @param columns number of columns
      */
     void generateMaze(int rows, int columns);
 
     /**
      * Returns the current maze.
      *
-     * @return the current maze
+     * @return current maze
      */
     Maze getMaze();
 }

@@ -1,4 +1,5 @@
 package com.example.atpprojectpartc.View;
+
 import algorithms.mazeGenerators.Maze;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;

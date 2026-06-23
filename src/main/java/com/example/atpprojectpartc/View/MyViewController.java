@@ -1,18 +1,23 @@
 package com.example.atpprojectpartc.View;
-
 import com.example.atpprojectpartc.ViewModel.MyViewModel;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Optional;
 
 /**
  * MyViewController is the View layer controller.
@@ -23,13 +28,22 @@ import java.util.Observer;
 public class MyViewController implements IView, Observer {
 
     @FXML
-    private TextField textField_mazeRows;
+    private VBox startPane;
 
     @FXML
-    private TextField textField_mazeColumns;
+    private VBox setupPane;
 
     @FXML
-    private Pane mazeContainer;
+    private BorderPane gamePane;
+
+    @FXML
+    private TextField rowsTextField;
+
+    @FXML
+    private TextField columnsTextField;
+
+    @FXML
+    private Pane mazePane;
 
     @FXML
     private Label statusLabel;
@@ -45,19 +59,22 @@ public class MyViewController implements IView, Observer {
     public void initialize() {
         mazeDisplayer = new MazeDisplayer();
 
-        mazeDisplayer.widthProperty().bind(mazeContainer.widthProperty());
-        mazeDisplayer.heightProperty().bind(mazeContainer.heightProperty());
+        mazeDisplayer.widthProperty().bind(mazePane.widthProperty());
+        mazeDisplayer.heightProperty().bind(mazePane.heightProperty());
 
-        mazeContainer.getChildren().add(mazeDisplayer);
-        mazeContainer.setFocusTraversable(true);
+        mazePane.getChildren().add(mazeDisplayer);
+        mazePane.setFocusTraversable(true);
+        mazeDisplayer.setFocusTraversable(true);
 
         mazeDisplayer.setOnMouseMoved(this::mouseMoved);
         mazeDisplayer.setOnMouseDragged(this::mouseMoved);
-        mazeContainer.setOnMouseMoved(this::mouseMoved);
-        mazeContainer.setOnMouseDragged(this::mouseMoved);
+        mazePane.setOnMouseMoved(this::mouseMoved);
+        mazePane.setOnMouseDragged(this::mouseMoved);
 
-        mazeContainer.widthProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
-        mazeContainer.heightProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
+        mazePane.widthProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
+        mazePane.heightProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
+
+        showStartScreen();
     }
 
     /**
@@ -72,22 +89,42 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
-     * Generates a new maze according to the rows and columns from the GUI.
-     * This method is connected to the Generate Maze button in the FXML.
+     * Handles click on Start Game.
      */
     @FXML
-    public void generateMaze() {
+    public void onStartGameClicked() {
+        showSetupScreen();
+    }
+
+    /**
+     * Handles click on Back.
+     */
+    @FXML
+    public void onBackToStartClicked() {
+        showStartScreen();
+    }
+
+    /**
+     * Handles click on Generate Maze.
+     */
+    @FXML
+    public void onGenerateMazeClicked() {
         if (viewModel == null) {
             displayMessage("ViewModel is not connected.");
             return;
         }
 
         try {
-            int rows = Integer.parseInt(textField_mazeRows.getText());
-            int columns = Integer.parseInt(textField_mazeColumns.getText());
+            int rows = Integer.parseInt(rowsTextField.getText().trim());
+            int columns = Integer.parseInt(columnsTextField.getText().trim());
 
-            if (rows < 2 || columns < 2) {
-                displayMessage("Maze size must be at least 2x2.");
+            if (rows < 3 || columns < 3) {
+                showErrorAlert("Invalid maze size", "Rows and columns must be at least 3.");
+                return;
+            }
+
+            if (rows > 100 || columns > 100) {
+                showErrorAlert("Invalid maze size", "Rows and columns must be 100 or less.");
                 return;
             }
 
@@ -95,15 +132,58 @@ public class MyViewController implements IView, Observer {
             requestMazeFocus();
 
         } catch (NumberFormatException e) {
-            displayMessage("Please enter valid numbers for rows and columns.");
+            showErrorAlert("Invalid input", "Rows and columns must be numbers.");
         }
     }
 
     /**
+     * Handles click on Show Solution.
+     */
+    @FXML
+    public void onShowSolutionClicked() {
+        showInformationAlert(
+                "Solution",
+                "In the next step we will connect this button to the solver from Part B."
+        );
+
+        requestMazeFocus();
+    }
+
+    /**
+     * Handles click on New Maze.
+     */
+    @FXML
+    public void onNewMazeClicked() {
+        showSetupScreen();
+    }
+
+    /**
+     * Handles click on Exit Game.
+     */
+    @FXML
+    public void onExitGameClicked() {
+        boolean shouldExit = showConfirmationAlert(
+                "Exit Game",
+                "Are you sure you want to leave the current maze?"
+        );
+
+        if (shouldExit) {
+            showStartScreen();
+        } else {
+            requestMazeFocus();
+        }
+    }
+
+    /**
+     * Handles click on Exit.
+     */
+    @FXML
+    public void onExitClicked() {
+        cleanExit();
+    }
+
+    /**
      * Handles keyboard movement.
-     * The required movement keys are:
-     * 8 up, 2 down, 4 left, 6 right,
-     * 7 up-left, 9 up-right, 1 down-left, 3 down-right.
      *
      * @param keyEvent keyboard event
      */
@@ -123,6 +203,10 @@ public class MyViewController implements IView, Observer {
      * @param code pressed key code
      */
     private void handleKeyPressed(KeyCode code) {
+        if (!gamePane.isVisible()) {
+            return;
+        }
+
         switch (code) {
             case NUMPAD8, DIGIT8, UP -> viewModel.moveUp();
             case NUMPAD2, DIGIT2, DOWN -> viewModel.moveDown();
@@ -151,6 +235,10 @@ public class MyViewController implements IView, Observer {
      */
     private void mouseMoved(MouseEvent mouseEvent) {
         if (viewModel == null || viewModel.getMaze() == null || mazeDisplayer == null) {
+            return;
+        }
+
+        if (!gamePane.isVisible()) {
             return;
         }
 
@@ -232,6 +320,7 @@ public class MyViewController implements IView, Observer {
         );
 
         setStatusText("Move with arrows, NumPad 8/2/4/6/7/9/1/3, or move the mouse over adjacent cells.");
+        showGameScreen();
         requestMazeFocus();
     }
 
@@ -269,7 +358,7 @@ public class MyViewController implements IView, Observer {
         );
 
         setStatusText("You solved the maze!");
-        displayMessage("Great job! You solved the maze.");
+        showInformationAlert("Victory", "Great job! You solved the maze.");
     }
 
     /**
@@ -299,9 +388,15 @@ public class MyViewController implements IView, Observer {
      * Requests keyboard focus for the maze container.
      */
     public void requestMazeFocus() {
-        if (mazeContainer != null) {
-            mazeContainer.requestFocus();
-        }
+        Platform.runLater(() -> {
+            if (mazePane != null) {
+                mazePane.requestFocus();
+            }
+
+            if (mazeDisplayer != null) {
+                mazeDisplayer.requestFocus();
+            }
+        });
     }
 
     /**
@@ -316,16 +411,114 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
+     * Shows the start screen.
+     */
+    private void showStartScreen() {
+        setPaneVisible(startPane, true);
+        setPaneVisible(setupPane, false);
+        setPaneVisible(gamePane, false);
+    }
+
+    /**
+     * Shows the setup screen.
+     */
+    private void showSetupScreen() {
+        setPaneVisible(startPane, false);
+        setPaneVisible(setupPane, true);
+        setPaneVisible(gamePane, false);
+    }
+
+    /**
+     * Shows the game screen.
+     */
+    private void showGameScreen() {
+        setPaneVisible(startPane, false);
+        setPaneVisible(setupPane, false);
+        setPaneVisible(gamePane, true);
+    }
+
+    /**
+     * Sets node visibility and managed status.
+     *
+     * @param node node to update
+     * @param visible true if visible
+     */
+    private void setPaneVisible(Node node, boolean visible) {
+        node.setVisible(visible);
+        node.setManaged(visible);
+    }
+
+    /**
      * Displays an information alert to the user.
      *
      * @param message message to display
      */
     @Override
     public void displayMessage(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Maze Game");
+        showInformationAlert("Maze Game", message);
+    }
+
+    /**
+     * Shows error alert.
+     *
+     * @param title alert title
+     * @param content alert content
+     */
+    private void showErrorAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.show();
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
+    /**
+     * Shows information alert.
+     *
+     * @param title alert title
+     * @param content alert content
+     */
+    private void showInformationAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
+    /**
+     * Shows confirmation alert.
+     *
+     * @param title alert title
+     * @param content alert content
+     * @return true if confirmed
+     */
+    private boolean showConfirmationAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
+    }
+
+    /**
+     * Exits the application cleanly.
+     */
+    private void cleanExit() {
+        boolean shouldExit = showConfirmationAlert(
+                "Exit",
+                "Are you sure you want to exit PAC-MAZE?"
+        );
+
+        if (shouldExit) {
+            if (viewModel != null) {
+                viewModel.stopProgram();
+            }
+
+            Platform.exit();
+            System.exit(0);
+        }
     }
 }

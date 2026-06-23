@@ -1,51 +1,136 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.VBox?>
+        <?import javafx.geometry.Insets?>
+        <?import javafx.scene.control.Button?>
+        <?import javafx.scene.control.Label?>
+        <?import javafx.scene.control.TextField?>
+        <?import javafx.scene.layout.BorderPane?>
+        <?import javafx.scene.layout.HBox?>
+        <?import javafx.scene.layout.Pane?>
+        <?import javafx.scene.layout.StackPane?>
+        <?import javafx.scene.layout.VBox?>
 
-<BorderPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.atpprojectpartc.View.MyViewController">
+<StackPane fx:id="rootPane"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.example.atpprojectpartc.View.MyViewController"
+           stylesheets="@MyViewStyle.css"
+           prefWidth="1000.0"
+           prefHeight="700.0">
 
-    <top>
-        <Label text="Maze Game"
-               style="-fx-font-size: 24px; -fx-font-weight: bold;"
-               BorderPane.alignment="CENTER"/>
-    </top>
+    <!-- Start Screen -->
+    <VBox fx:id="startPane"
+          alignment="CENTER"
+          spacing="25.0"
+          styleClass="pacman-screen">
 
-    <left>
-        <VBox spacing="10.0" prefWidth="200.0">
-            <padding>
-                <Insets top="15.0" right="10.0" bottom="15.0" left="10.0"/>
-            </padding>
+        <VBox alignment="CENTER" spacing="15.0" styleClass="menu-card">
+            <Label text="PAC-MAZE" styleClass="pacman-title"/>
+            <Label text="Find your way out" styleClass="pacman-subtitle"/>
 
-            <Label text="Rows:"/>
-            <TextField fx:id="textField_mazeRows" text="50"/>
+            <Button text="Start Game"
+                    onAction="#onStartGameClicked"
+                    styleClass="pacman-main-button"/>
 
-            <Label text="Columns:"/>
-            <TextField fx:id="textField_mazeColumns" text="50"/>
-
-            <Button text="Generate Maze"
-                    onAction="#generateMaze"
-                    prefWidth="180.0"/>
-
-            <Label fx:id="statusLabel"
-                   text="Generate a maze to start."
-                   wrapText="true"/>
+            <Button text="Exit"
+                    onAction="#onExitClicked"
+                    styleClass="pacman-exit-button"/>
         </VBox>
-    </left>
 
-    <center>
-        <Pane fx:id="mazeContainer"
-              prefWidth="650.0"
-              prefHeight="550.0"
-              focusTraversable="true"
-              style="-fx-border-color: black; -fx-background-color: #ECEFF1;"/>
-    </center>
+    </VBox>
 
-</BorderPane>
+
+    <!-- Setup Screen -->
+    <VBox fx:id="setupPane"
+          alignment="CENTER"
+          spacing="22.0"
+          styleClass="pacman-screen"
+          visible="false"
+          managed="false">
+
+        <VBox alignment="CENTER" spacing="18.0" styleClass="menu-card">
+            <Label text="Maze Settings" styleClass="pacman-title-small"/>
+            <Label text="Choose maze size" styleClass="pacman-subtitle"/>
+
+            <VBox alignment="CENTER" spacing="15.0">
+
+                <HBox alignment="CENTER" spacing="10.0">
+                    <Label text="Rows:" styleClass="form-label"/>
+                    <TextField fx:id="rowsTextField"
+                               text="20"
+                               prefWidth="110.0"
+                               styleClass="input-field"/>
+                </HBox>
+
+                <HBox alignment="CENTER" spacing="10.0">
+                    <Label text="Columns:" styleClass="form-label"/>
+                    <TextField fx:id="columnsTextField"
+                               text="20"
+                               prefWidth="110.0"
+                               styleClass="input-field"/>
+                </HBox>
+
+            </VBox>
+
+            <HBox alignment="CENTER" spacing="14.0">
+                <Button text="Generate Maze"
+                        onAction="#onGenerateMazeClicked"
+                        styleClass="pacman-main-button"/>
+
+                <Button text="Back"
+                        onAction="#onBackToStartClicked"
+                        styleClass="pacman-secondary-button"/>
+
+                <Button text="Exit"
+                        onAction="#onExitClicked"
+                        styleClass="pacman-exit-button"/>
+            </HBox>
+        </VBox>
+
+    </VBox>
+
+
+    <!-- Game Screen -->
+    <BorderPane fx:id="gamePane"
+                styleClass="game-screen"
+                visible="false"
+                managed="false">
+
+        <top>
+            <VBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
+                <padding>
+                    <Insets top="15.0" bottom="10.0"/>
+                </padding>
+
+                <Label text="PAC-MAZE" styleClass="game-title"/>
+                <Label fx:id="statusLabel"
+                       text="Use the arrows, numbers, or mouse to move"
+                       styleClass="status-label"/>
+
+                <HBox alignment="CENTER" spacing="12.0">
+                    <Button text="Show Solution"
+                            onAction="#onShowSolutionClicked"
+                            styleClass="game-button"/>
+
+                    <Button text="New Maze"
+                            onAction="#onNewMazeClicked"
+                            styleClass="game-secondary-button"/>
+
+                    <Button text="Exit Game"
+                            onAction="#onExitGameClicked"
+                            styleClass="game-exit-button"/>
+                </HBox>
+            </VBox>
+        </top>
+
+        <center>
+            <Pane fx:id="mazePane"
+                  prefWidth="620.0"
+                  prefHeight="520.0"
+                  maxWidth="620.0"
+                  maxHeight="520.0"
+                  styleClass="maze-pane"/>
+        </center>
+
+    </BorderPane>
+
+</StackPane>

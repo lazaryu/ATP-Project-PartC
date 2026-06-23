@@ -41,8 +41,8 @@ public class MyModel extends Observable implements IModel {
     /**
      * Moves the player only if the movement is legal.
      *
-     * @param rowChange row movement
-     * @param columnChange column movement
+     * @param rowChange row movement: -1 up, 1 down, 0 no row movement
+     * @param columnChange column movement: -1 left, 1 right, 0 no column movement
      */
     @Override
     public void movePlayer(int rowChange, int columnChange) {
@@ -53,11 +53,7 @@ public class MyModel extends Observable implements IModel {
         int newRow = playerRow + rowChange;
         int newColumn = playerColumn + columnChange;
 
-        if (!isInsideMaze(newRow, newColumn)) {
-            return;
-        }
-
-        if (isWall(newRow, newColumn)) {
+        if (!isMoveLegal(newRow, newColumn, rowChange, columnChange)) {
             return;
         }
 
@@ -69,9 +65,60 @@ public class MyModel extends Observable implements IModel {
 
         if (isPlayerAtGoal()) {
             gameFinished = true;
+
             setChanged();
             notifyObservers("gameWon");
         }
+    }
+
+    /**
+     * Checks if the requested movement is legal.
+     * A regular move is legal if the target cell is open.
+     * A diagonal move is legal only if the target is open and
+     * the diagonal can be reached by an L-shaped path through open cells.
+     *
+     * @param newRow target row
+     * @param newColumn target column
+     * @param rowChange row movement
+     * @param columnChange column movement
+     * @return true if the player may move there
+     */
+    private boolean isMoveLegal(int newRow, int newColumn, int rowChange, int columnChange) {
+        if (!isOpenCell(newRow, newColumn)) {
+            return false;
+        }
+
+        boolean isDiagonalMove = Math.abs(rowChange) == 1 && Math.abs(columnChange) == 1;
+
+        if (!isDiagonalMove) {
+            return true;
+        }
+
+        /*
+         * Diagonal movement is allowed only if the player could reach
+         * the same target cell using two regular non-diagonal moves.
+         *
+         * Example for up-right:
+         * path 1: up, then right
+         * path 2: right, then up
+         *
+         * If at least one of these L-shaped paths is open, the diagonal is legal.
+         */
+        boolean pathThroughRowIsOpen = isOpenCell(playerRow + rowChange, playerColumn);
+        boolean pathThroughColumnIsOpen = isOpenCell(playerRow, playerColumn + columnChange);
+
+        return pathThroughRowIsOpen || pathThroughColumnIsOpen;
+    }
+
+    /**
+     * Checks if a cell is inside the maze and is not a wall.
+     *
+     * @param row row index
+     * @param column column index
+     * @return true if the cell is open
+     */
+    private boolean isOpenCell(int row, int column) {
+        return isInsideMaze(row, column) && !isWall(row, column);
     }
 
     /**
@@ -102,7 +149,7 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Checks if the player reached the goal.
+     * Checks if the player reached the goal position.
      *
      * @return true if the player reached the goal
      */
@@ -153,10 +200,10 @@ public class MyModel extends Observable implements IModel {
 
     /**
      * Stops resources before closing the application.
-     * Currently there are no running resources to stop.
+     * Later, if the model starts servers from Part B, they should be stopped here.
      */
     @Override
     public void stopProgram() {
-        // Later, if we start servers from Part B, we will stop them here.
+        // No resources to stop yet.
     }
 }

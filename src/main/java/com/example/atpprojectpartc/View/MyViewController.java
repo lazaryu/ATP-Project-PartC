@@ -1,47 +1,35 @@
 package com.example.atpprojectpartc.View;
 
-import com.example.atpprojectpartc.Model.MyModel;
 import com.example.atpprojectpartc.ViewModel.MyViewModel;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 
 import java.util.Observable;
 import java.util.Observer;
-import java.util.Optional;
 
 /**
  * MyViewController is the View layer controller.
- * It handles GUI events and observes the ViewModel.
+ * It receives user actions from the GUI, forwards them to the ViewModel,
+ * and updates the maze display when the ViewModel notifies about changes.
  */
 @SuppressWarnings("deprecation")
 public class MyViewController implements IView, Observer {
 
     @FXML
-    private VBox startPane;
+    private TextField textField_mazeRows;
 
     @FXML
-    private VBox setupPane;
+    private TextField textField_mazeColumns;
 
     @FXML
-    private BorderPane gamePane;
-
-    @FXML
-    private TextField rowsTextField;
-
-    @FXML
-    private TextField columnsTextField;
-
-    @FXML
-    private Pane mazePane;
+    private Pane mazeContainer;
 
     @FXML
     private Label statusLabel;
@@ -50,298 +38,238 @@ public class MyViewController implements IView, Observer {
     private MyViewModel viewModel;
 
     /**
-     * Initializes the controller after the FXML is loaded.
+     * Initializes the custom MazeDisplayer and places it inside the maze container.
+     * This method is called automatically after the FXML file is loaded.
      */
     @FXML
     public void initialize() {
-        MyModel model = new MyModel();
-        viewModel = new MyViewModel(model);
-        viewModel.addObserver(this);
-
         mazeDisplayer = new MazeDisplayer();
-        mazeDisplayer.setWidth(620);
-        mazeDisplayer.setHeight(520);
 
-        mazePane.getChildren().add(mazeDisplayer);
+        mazeDisplayer.widthProperty().bind(mazeContainer.widthProperty());
+        mazeDisplayer.heightProperty().bind(mazeContainer.heightProperty());
 
-        showStartScreen();
+        mazeContainer.getChildren().add(mazeDisplayer);
+        mazeContainer.setFocusTraversable(true);
+
+        mazeContainer.widthProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
+        mazeContainer.heightProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
     }
 
     /**
-     * Handles click on Start Game.
+     * Connects the controller to the ViewModel.
+     *
+     * @param viewModel the ViewModel layer
      */
-    @FXML
-    protected void onStartGameClicked() {
-        showSetupScreen();
+    @Override
+    public void setViewModel(MyViewModel viewModel) {
+        this.viewModel = viewModel;
+        this.viewModel.addObserver(this);
     }
 
     /**
-     * Handles click on Back.
+     * Generates a new maze according to the rows and columns from the GUI.
+     * This method is connected to the Generate Maze button in the FXML.
      */
     @FXML
-    protected void onBackToStartClicked() {
-        showStartScreen();
-    }
+    public void generateMaze() {
+        if (viewModel == null) {
+            displayMessage("ViewModel is not connected.");
+            return;
+        }
 
-    /**
-     * Handles click on Generate Maze.
-     */
-    @FXML
-    protected void onGenerateMazeClicked() {
         try {
-            int rows = Integer.parseInt(rowsTextField.getText().trim());
-            int columns = Integer.parseInt(columnsTextField.getText().trim());
+            int rows = Integer.parseInt(textField_mazeRows.getText());
+            int columns = Integer.parseInt(textField_mazeColumns.getText());
+
+            if (rows < 2 || columns < 2) {
+                displayMessage("Maze size must be at least 2x2.");
+                return;
+            }
 
             viewModel.generateMaze(rows, columns);
+            requestMazeFocus();
 
         } catch (NumberFormatException e) {
-            showErrorAlert("Invalid input", "Rows and columns must be numbers.");
+            displayMessage("Please enter valid numbers for rows and columns.");
         }
-    }
-
-    /**
-     * Handles click on Show Solution.
-     */
-    @FXML
-    protected void onShowSolutionClicked() {
-        showInformationAlert(
-                "Solution",
-                "In the next step we will connect this button to the solver from Part B."
-        );
-    }
-
-    /**
-     * Handles click on New Maze.
-     */
-    @FXML
-    protected void onNewMazeClicked() {
-        showSetupScreen();
-    }
-
-    /**
-     * Handles click on Exit Game.
-     */
-    @FXML
-    protected void onExitGameClicked() {
-        boolean shouldExit = showConfirmationAlert(
-                "Exit Game",
-                "Are you sure you want to leave the current maze?"
-        );
-
-        if (shouldExit) {
-            showStartScreen();
-        }
-    }
-
-    /**
-     * Handles click on Exit.
-     */
-    @FXML
-    protected void onExitClicked() {
-        cleanExit();
     }
 
     /**
      * Handles keyboard movement.
+     * The required movement keys are:
+     * 8 up, 2 down, 4 left, 6 right,
+     * 7 up-left, 9 up-right, 1 down-left, 3 down-right.
      *
-     * @param code key code
+     * @param keyEvent keyboard event
      */
-    private void handleKeyPressed(KeyCode code) {
-        if (!gamePane.isVisible()) {
+    @FXML
+    public void keyPressed(KeyEvent keyEvent) {
+        if (viewModel == null || viewModel.getMaze() == null) {
             return;
         }
 
-        if (code == KeyCode.UP) {
-            viewModel.moveUp();
-        } else if (code == KeyCode.DOWN) {
-            viewModel.moveDown();
-        } else if (code == KeyCode.LEFT) {
-            viewModel.moveLeft();
-        } else if (code == KeyCode.RIGHT) {
-            viewModel.moveRight();
-        }
+        handleKeyPressed(keyEvent.getCode());
+        keyEvent.consume();
     }
 
     /**
-     * Gets notified when the ViewModel changes.
+     * Converts a pressed key into a movement command.
      *
-     * @param observable observable object
+     * @param code pressed key code
+     */
+    private void handleKeyPressed(KeyCode code) {
+        switch (code) {
+            case NUMPAD8, UP -> viewModel.moveUp();
+            case NUMPAD2, DOWN -> viewModel.moveDown();
+            case NUMPAD4, LEFT -> viewModel.moveLeft();
+            case NUMPAD6, RIGHT -> viewModel.moveRight();
+
+            case NUMPAD7 -> viewModel.moveUpLeft();
+            case NUMPAD9 -> viewModel.moveUpRight();
+            case NUMPAD1 -> viewModel.moveDownLeft();
+            case NUMPAD3 -> viewModel.moveDownRight();
+
+            default -> {
+                return;
+            }
+        }
+
+        requestMazeFocus();
+    }
+
+    /**
+     * Receives notifications from the ViewModel.
+     *
+     * @param observable the observable object
      * @param arg update message
      */
     @Override
     public void update(Observable observable, Object arg) {
-        if (observable != viewModel) {
-            return;
-        }
-
-        String message = String.valueOf(arg);
-
-        switch (message) {
-            case "mazeGenerated" -> {
-                mazeDisplayer.setMaze(
-                        viewModel.getMaze(),
-                        viewModel.getPlayerRow(),
-                        viewModel.getPlayerColumn()
-                );
-
-                statusLabel.setText("Maze generated. Use the arrow keys to move.");
-                showGameScreen();
-                registerKeyboardListener();
-            }
-
-            case "playerMoved" -> {
-                mazeDisplayer.updatePlayerPosition(
-                        viewModel.getPlayerRow(),
-                        viewModel.getPlayerColumn()
-                );
-
-                statusLabel.setText("Keep going!");
-            }
-
-            case "gameWon" -> {
-                mazeDisplayer.updatePlayerPosition(
-                        viewModel.getPlayerRow(),
-                        viewModel.getPlayerColumn()
-                );
-
-                statusLabel.setText("You solved the maze!");
-                showInformationAlert("Victory", "You solved the maze!");
-            }
-
-            case "invalidMazeSize" -> showErrorAlert(
-                    "Invalid maze size",
-                    "Rows and columns must be at least 2."
-            );
-
-            case "mazeSizeTooLarge" -> showErrorAlert(
-                    "Invalid maze size",
-                    "Rows and columns must be 100 or less."
-            );
-
-            default -> displayMessage(message);
-        }
-    }
-
-    /**
-     * Registers keyboard listener on the current scene.
-     */
-    private void registerKeyboardListener() {
         Platform.runLater(() -> {
-            if (mazePane.getScene() != null) {
-                mazePane.getScene().setOnKeyPressed(event -> handleKeyPressed(event.getCode()));
-                mazePane.requestFocus();
+            if (arg == null) {
+                return;
+            }
+
+            String updateMessage = arg.toString();
+
+            switch (updateMessage) {
+                case "mazeGenerated" -> handleMazeGenerated();
+                case "playerMoved" -> handlePlayerMoved();
+                case "gameWon" -> handleGameWon();
+                default -> System.out.println("Unknown update: " + updateMessage);
             }
         });
     }
 
     /**
-     * Displays a message.
+     * Updates the view after a new maze was generated.
+     */
+    private void handleMazeGenerated() {
+        if (mazeDisplayer == null) {
+            return;
+        }
+
+        mazeDisplayer.setMaze(
+                viewModel.getMaze(),
+                viewModel.getPlayerRow(),
+                viewModel.getPlayerColumn()
+        );
+
+        setStatusText("Use NumPad 8/2/4/6 and 7/9/1/3 to move.");
+        requestMazeFocus();
+    }
+
+    /**
+     * Updates the player location on the maze display.
+     */
+    private void handlePlayerMoved() {
+        if (mazeDisplayer == null) {
+            return;
+        }
+
+        mazeDisplayer.updatePlayerPosition(
+                viewModel.getPlayerRow(),
+                viewModel.getPlayerColumn()
+        );
+
+        setStatusText("Player: (" +
+                viewModel.getPlayerRow() +
+                ", " +
+                viewModel.getPlayerColumn() +
+                ")");
+    }
+
+    /**
+     * Handles winning the game.
+     */
+    private void handleGameWon() {
+        if (mazeDisplayer == null) {
+            return;
+        }
+
+        mazeDisplayer.updatePlayerPosition(
+                viewModel.getPlayerRow(),
+                viewModel.getPlayerColumn()
+        );
+
+        setStatusText("You solved the maze!");
+        displayMessage("Great job! You solved the maze.");
+    }
+
+    /**
+     * Connects keyboard events to the scene.
+     * Call this method from HelloApplication after creating the Scene.
+     *
+     * @param scene the main scene
+     */
+    public void setSceneEvents(Scene scene) {
+        scene.setOnKeyPressed(this::keyPressed);
+    }
+
+    /**
+     * Redraws the maze after resizing.
+     */
+    private void redrawMaze() {
+        if (mazeDisplayer != null && viewModel != null && viewModel.getMaze() != null) {
+            mazeDisplayer.setMaze(
+                    viewModel.getMaze(),
+                    viewModel.getPlayerRow(),
+                    viewModel.getPlayerColumn()
+            );
+        }
+    }
+
+    /**
+     * Requests keyboard focus for the maze container.
+     */
+    public void requestMazeFocus() {
+        if (mazeContainer != null) {
+            mazeContainer.requestFocus();
+        }
+    }
+
+    /**
+     * Updates the status label safely.
+     *
+     * @param text status text
+     */
+    private void setStatusText(String text) {
+        if (statusLabel != null) {
+            statusLabel.setText(text);
+        }
+    }
+
+    /**
+     * Displays an information alert to the user.
      *
      * @param message message to display
      */
     @Override
     public void displayMessage(String message) {
-        if (statusLabel != null) {
-            statusLabel.setText(message);
-        }
-    }
-
-    /**
-     * Shows the start screen.
-     */
-    private void showStartScreen() {
-        setPaneVisible(startPane, true);
-        setPaneVisible(setupPane, false);
-        setPaneVisible(gamePane, false);
-    }
-
-    /**
-     * Shows the setup screen.
-     */
-    private void showSetupScreen() {
-        setPaneVisible(startPane, false);
-        setPaneVisible(setupPane, true);
-        setPaneVisible(gamePane, false);
-    }
-
-    /**
-     * Shows the game screen.
-     */
-    private void showGameScreen() {
-        setPaneVisible(startPane, false);
-        setPaneVisible(setupPane, false);
-        setPaneVisible(gamePane, true);
-    }
-
-    /**
-     * Sets node visibility and managed status.
-     *
-     * @param node node to update
-     * @param visible true if visible
-     */
-    private void setPaneVisible(Node node, boolean visible) {
-        node.setVisible(visible);
-        node.setManaged(visible);
-    }
-
-    /**
-     * Shows error alert.
-     *
-     * @param title alert title
-     * @param content alert content
-     */
-    private void showErrorAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
-
-    /**
-     * Shows information alert.
-     *
-     * @param title alert title
-     * @param content alert content
-     */
-    private void showInformationAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
+        alert.setTitle("Maze Game");
         alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
-
-    /**
-     * Shows confirmation alert.
-     *
-     * @param title alert title
-     * @param content alert content
-     * @return true if confirmed
-     */
-    private boolean showConfirmationAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        return result.isPresent() && result.get() == ButtonType.OK;
-    }
-
-    /**
-     * Exits the application cleanly.
-     */
-    private void cleanExit() {
-        boolean shouldExit = showConfirmationAlert(
-                "Exit",
-                "Are you sure you want to exit Maze Quest?"
-        );
-
-        if (shouldExit) {
-            viewModel.stopProgram();
-            Platform.exit();
-            System.exit(0);
-        }
+        alert.setContentText(message);
+        alert.show();
     }
 }

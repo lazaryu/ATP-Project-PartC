@@ -1,49 +1,48 @@
 package com.example.atpprojectpartc;
 
+import com.example.atpprojectpartc.Model.IModel;
+import com.example.atpprojectpartc.Model.MyModel;
+import com.example.atpprojectpartc.View.MyViewController;
+import com.example.atpprojectpartc.ViewModel.MyViewModel;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 
 /**
  * Main entry point of the JavaFX application.
+ * Creates and connects the Model, ViewModel, and View.
  */
 public class HelloApplication extends Application {
 
-    /**
-     * Starts the JavaFX application.
-     *
-     * @param stage main window
-     * @throws IOException if FXML cannot be loaded
-     */
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(
                 HelloApplication.class.getResource("View/MyView.fxml")
         );
 
-        Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
+        Pane root = fxmlLoader.load();
 
-        stage.setTitle("Maze Quest");
+        IModel model = new MyModel();
+        MyViewModel viewModel = new MyViewModel(model);
+
+        MyViewController controller = fxmlLoader.getController();
+        controller.setViewModel(viewModel);
+
+        Scene scene = new Scene(root, 900, 650);
+
+        controller.setSceneEvents(scene);
+
+        stage.setTitle("Maze Game");
         stage.setScene(scene);
-
-        stage.setOnCloseRequest(event -> {
-            event.consume();
-            Platform.exit();
-            System.exit(0);
-        });
-
         stage.show();
+
+        controller.requestMazeFocus();
     }
 
-    /**
-     * Launches the application.
-     *
-     * @param args command line arguments
-     */
     public static void main(String[] args) {
         launch();
     }

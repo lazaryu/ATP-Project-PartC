@@ -7,8 +7,9 @@ import java.util.Observable;
 import java.util.Observer;
 
 /**
- * MyViewModel connects the View layer with the Model layer.
- * It observes the Model and is observed by the View.
+ * MyViewModel connects the View and the Model.
+ * It forwards user actions from the View to the Model,
+ * and forwards updates from the Model back to the View.
  */
 @SuppressWarnings("deprecation")
 public class MyViewModel extends Observable implements Observer {
@@ -16,9 +17,9 @@ public class MyViewModel extends Observable implements Observer {
     private final IModel model;
 
     /**
-     * Constructor.
+     * Creates a ViewModel and connects it to the Model.
      *
-     * @param model the model layer
+     * @param model model layer
      */
     public MyViewModel(IModel model) {
         this.model = model;
@@ -26,24 +27,24 @@ public class MyViewModel extends Observable implements Observer {
     }
 
     /**
-     * Validates input and asks the model to generate a maze.
+     * Called when the Model notifies that something has changed.
+     *
+     * @param observable observable object
+     * @param arg update message
+     */
+    @Override
+    public void update(Observable observable, Object arg) {
+        setChanged();
+        notifyObservers(arg);
+    }
+
+    /**
+     * Requests maze generation from the Model.
      *
      * @param rows number of rows
      * @param columns number of columns
      */
     public void generateMaze(int rows, int columns) {
-        if (rows < 2 || columns < 2) {
-            setChanged();
-            notifyObservers("invalidMazeSize");
-            return;
-        }
-
-        if (rows > 100 || columns > 100) {
-            setChanged();
-            notifyObservers("mazeSizeTooLarge");
-            return;
-        }
-
         model.generateMaze(rows, columns);
     }
 
@@ -76,6 +77,34 @@ public class MyViewModel extends Observable implements Observer {
     }
 
     /**
+     * Moves the player diagonally up-left.
+     */
+    public void moveUpLeft() {
+        model.movePlayer(-1, -1);
+    }
+
+    /**
+     * Moves the player diagonally up-right.
+     */
+    public void moveUpRight() {
+        model.movePlayer(-1, 1);
+    }
+
+    /**
+     * Moves the player diagonally down-left.
+     */
+    public void moveDownLeft() {
+        model.movePlayer(1, -1);
+    }
+
+    /**
+     * Moves the player diagonally down-right.
+     */
+    public void moveDownRight() {
+        model.movePlayer(1, 1);
+    }
+
+    /**
      * Returns the current maze.
      *
      * @return current maze
@@ -85,7 +114,7 @@ public class MyViewModel extends Observable implements Observer {
     }
 
     /**
-     * Returns the player row.
+     * Returns the player's row.
      *
      * @return player row
      */
@@ -94,7 +123,7 @@ public class MyViewModel extends Observable implements Observer {
     }
 
     /**
-     * Returns the player column.
+     * Returns the player's column.
      *
      * @return player column
      */
@@ -107,19 +136,5 @@ public class MyViewModel extends Observable implements Observer {
      */
     public void stopProgram() {
         model.stopProgram();
-    }
-
-    /**
-     * Gets notified by the Model and notifies the View.
-     *
-     * @param observable observable object
-     * @param arg update message
-     */
-    @Override
-    public void update(Observable observable, Object arg) {
-        if (observable == model) {
-            setChanged();
-            notifyObservers(arg);
-        }
     }
 }

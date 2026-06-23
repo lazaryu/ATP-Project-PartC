@@ -1,12 +1,16 @@
 package com.example.atpprojectpartc.View;
 
 import algorithms.mazeGenerators.Maze;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 /**
- * MazeDisplayer is a custom JavaFX control that draws the maze on a Canvas.
+ * Custom JavaFX Canvas for drawing the maze, start position, goal position,
+ * and player position.
  */
 public class MazeDisplayer extends Canvas {
 
@@ -15,11 +19,11 @@ public class MazeDisplayer extends Canvas {
     private int playerColumn;
 
     /**
-     * Sets the maze and player position.
+     * Sets the maze and player position, then redraws the board.
      *
-     * @param maze maze to display
-     * @param playerRow player row
-     * @param playerColumn player column
+     * @param maze the maze to display
+     * @param playerRow the player's row
+     * @param playerColumn the player's column
      */
     public void setMaze(Maze maze, int playerRow, int playerColumn) {
         this.maze = maze;
@@ -29,10 +33,10 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Updates the player position and redraws the maze.
+     * Updates only the player position and redraws.
      *
-     * @param playerRow player row
-     * @param playerColumn player column
+     * @param playerRow the player's row
+     * @param playerColumn the player's column
      */
     public void updatePlayerPosition(int playerRow, int playerColumn) {
         this.playerRow = playerRow;
@@ -41,54 +45,50 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Draws the maze, goal, and player.
+     * Draws the maze, entrance, exit, and player.
      */
     private void draw() {
-        GraphicsContext graphicsContext = getGraphicsContext2D();
+        GraphicsContext gc = getGraphicsContext2D();
 
         double canvasWidth = getWidth();
         double canvasHeight = getHeight();
 
-        graphicsContext.clearRect(0, 0, canvasWidth, canvasHeight);
+        gc.clearRect(0, 0, canvasWidth, canvasHeight);
 
-        graphicsContext.setFill(Color.web("#eceff1"));
-        graphicsContext.fillRect(0, 0, canvasWidth, canvasHeight);
+        gc.setFill(Color.web("#ECEFF1"));
+        gc.fillRect(0, 0, canvasWidth, canvasHeight);
 
         if (maze == null) {
             return;
         }
 
-        int[][] mazeMatrix = maze.getMaze();
-
-        int rows = mazeMatrix.length;
-        int columns = mazeMatrix[0].length;
+        int[][] mazeMap = maze.getMaze();
+        int rows = mazeMap.length;
+        int columns = mazeMap[0].length;
 
         double cellWidth = canvasWidth / columns;
         double cellHeight = canvasHeight / rows;
 
-        drawCells(graphicsContext, mazeMatrix, cellWidth, cellHeight);
-        drawGoal(graphicsContext, cellWidth, cellHeight);
-        drawPlayer(graphicsContext, cellWidth, cellHeight);
+        drawMazeCells(gc, mazeMap, cellWidth, cellHeight);
+        drawStartCell(gc, cellWidth, cellHeight);
+        drawGoalCell(gc, cellWidth, cellHeight);
+        drawPlayer(gc, cellWidth, cellHeight);
+        drawStartAndGoalLetters(gc, cellWidth, cellHeight);
     }
 
     /**
-     * Draws all maze cells.
-     *
-     * @param graphicsContext graphics context
-     * @param mazeMatrix maze matrix
-     * @param cellWidth cell width
-     * @param cellHeight cell height
+     * Draws the maze cells.
      */
-    private void drawCells(GraphicsContext graphicsContext, int[][] mazeMatrix, double cellWidth, double cellHeight) {
-        for (int row = 0; row < mazeMatrix.length; row++) {
-            for (int column = 0; column < mazeMatrix[row].length; column++) {
-                if (mazeMatrix[row][column] == 1) {
-                    graphicsContext.setFill(Color.web("#102a43"));
+    private void drawMazeCells(GraphicsContext gc, int[][] mazeMap, double cellWidth, double cellHeight) {
+        for (int row = 0; row < mazeMap.length; row++) {
+            for (int column = 0; column < mazeMap[row].length; column++) {
+                if (mazeMap[row][column] == 1) {
+                    gc.setFill(Color.web("#102A43"));
                 } else {
-                    graphicsContext.setFill(Color.web("#f8f9fa"));
+                    gc.setFill(Color.web("#F8F9FA"));
                 }
 
-                graphicsContext.fillRect(
+                gc.fillRect(
                         column * cellWidth,
                         row * cellHeight,
                         cellWidth,
@@ -99,54 +99,87 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Draws the goal position.
-     *
-     * @param graphicsContext graphics context
-     * @param cellWidth cell width
-     * @param cellHeight cell height
+     * Draws the entrance cell.
      */
-    private void drawGoal(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
+    private void drawStartCell(GraphicsContext gc, double cellWidth, double cellHeight) {
+        int startRow = maze.getStartPosition().getRowIndex();
+        int startColumn = maze.getStartPosition().getColumnIndex();
+
+        gc.setFill(Color.web("#2A9D8F"));
+        gc.fillRect(
+                startColumn * cellWidth,
+                startRow * cellHeight,
+                cellWidth,
+                cellHeight
+        );
+    }
+
+    /**
+     * Draws the exit cell.
+     */
+    private void drawGoalCell(GraphicsContext gc, double cellWidth, double cellHeight) {
         int goalRow = maze.getGoalPosition().getRowIndex();
         int goalColumn = maze.getGoalPosition().getColumnIndex();
 
-        double x = goalColumn * cellWidth;
-        double y = goalRow * cellHeight;
-
-        graphicsContext.setFill(Color.web("#ffb703"));
-        graphicsContext.fillOval(
-                x + cellWidth * 0.15,
-                y + cellHeight * 0.15,
-                cellWidth * 0.7,
-                cellHeight * 0.7
+        gc.setFill(Color.web("#FFB703"));
+        gc.fillRect(
+                goalColumn * cellWidth,
+                goalRow * cellHeight,
+                cellWidth,
+                cellHeight
         );
     }
 
     /**
      * Draws the player.
-     *
-     * @param graphicsContext graphics context
-     * @param cellWidth cell width
-     * @param cellHeight cell height
      */
-    private void drawPlayer(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
+    private void drawPlayer(GraphicsContext gc, double cellWidth, double cellHeight) {
         double x = playerColumn * cellWidth;
         double y = playerRow * cellHeight;
 
-        graphicsContext.setFill(Color.web("#0078d7"));
-        graphicsContext.fillOval(
-                x + cellWidth * 0.12,
-                y + cellHeight * 0.12,
-                cellWidth * 0.76,
-                cellHeight * 0.76
+        gc.setFill(Color.web("#0078D7"));
+        gc.fillOval(
+                x + cellWidth * 0.18,
+                y + cellHeight * 0.18,
+                cellWidth * 0.64,
+                cellHeight * 0.64
         );
 
-        graphicsContext.setStroke(Color.WHITE);
-        graphicsContext.setLineWidth(2);
-        graphicsContext.strokeOval(
-                x + cellWidth * 0.12,
-                y + cellHeight * 0.12,
-                cellWidth * 0.76,
-                cellHeight * 0.76
+        gc.setStroke(Color.WHITE);
+        gc.setLineWidth(2);
+        gc.strokeOval(
+                x + cellWidth * 0.18,
+                y + cellHeight * 0.18,
+                cellWidth * 0.64,
+                cellHeight * 0.64
+        );
+    }
+
+    /**
+     * Draws S on the start cell and E on the goal cell.
+     */
+    private void drawStartAndGoalLetters(GraphicsContext gc, double cellWidth, double cellHeight) {
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
+        gc.setFont(Font.font(Math.max(10, Math.min(cellWidth, cellHeight) * 0.55)));
+        gc.setFill(Color.WHITE);
+
+        int startRow = maze.getStartPosition().getRowIndex();
+        int startColumn = maze.getStartPosition().getColumnIndex();
+
+        gc.fillText(
+                "S",
+                startColumn * cellWidth + cellWidth / 2,
+                startRow * cellHeight + cellHeight / 2
+        );
+
+        int goalRow = maze.getGoalPosition().getRowIndex();
+        int goalColumn = maze.getGoalPosition().getColumnIndex();
+
+        gc.fillText(
+                "E",
+                goalColumn * cellWidth + cellWidth / 2,
+                goalRow * cellHeight + cellHeight / 2
         );
     }
 }

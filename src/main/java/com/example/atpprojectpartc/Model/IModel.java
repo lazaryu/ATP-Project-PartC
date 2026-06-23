@@ -5,7 +5,7 @@ import algorithms.mazeGenerators.Maze;
 import java.util.Observer;
 
 /**
- * IModel defines the operations of the Model layer.
+ * Defines the operations that the ViewModel can request from the Model.
  */
 public interface IModel {
 
@@ -18,7 +18,7 @@ public interface IModel {
     void generateMaze(int rows, int columns);
 
     /**
-     * Moves the player if the requested movement is legal.
+     * Moves the player by row and column changes.
      *
      * @param rowChange row movement
      * @param columnChange column movement

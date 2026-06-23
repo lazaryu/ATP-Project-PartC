@@ -1,14 +1,9 @@
 package com.example.atpprojectpartc.View;
 
-/**
- * IView defines basic view operations.
- */
-public interface IView {
+import com.example.atpprojectpartc.ViewModel.MyViewModel;
 
-    /**
-     * Displays a message to the user.
-     *
-     * @param message message to display
-     */
+public interface IView {
+    void setViewModel(MyViewModel viewModel);
+
     void displayMessage(String message);
 }

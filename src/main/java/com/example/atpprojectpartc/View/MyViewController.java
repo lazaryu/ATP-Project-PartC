@@ -1,4 +1,5 @@
 package com.example.atpprojectpartc.View;
+
 import com.example.atpprojectpartc.ViewModel.MyViewModel;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -52,8 +53,7 @@ public class MyViewController implements IView, Observer {
     private MyViewModel viewModel;
 
     /**
-     * Initializes the custom MazeDisplayer and places it inside the maze container.
-     * This method is called automatically after the FXML file is loaded.
+     * Initializes the custom MazeDisplayer and places it inside the maze pane.
      */
     @FXML
     public void initialize() {
@@ -141,11 +141,12 @@ public class MyViewController implements IView, Observer {
      */
     @FXML
     public void onShowSolutionClicked() {
-        showInformationAlert(
-                "Solution",
-                "In the next step we will connect this button to the solver from Part B."
-        );
+        if (viewModel == null || viewModel.getMaze() == null) {
+            showErrorAlert("No maze", "Please generate a maze first.");
+            return;
+        }
 
+        viewModel.solveMaze();
         requestMazeFocus();
     }
 
@@ -228,8 +229,6 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles mouse movement over the maze.
-     * If the mouse moves into a cell adjacent to the player,
-     * the player tries to move to that cell.
      *
      * @param mouseEvent mouse movement event
      */
@@ -267,11 +266,11 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
-     * Checks if the target cell is adjacent to the player's current cell.
+     * Checks if the target cell is adjacent to the player.
      *
      * @param rowDifference row difference
      * @param columnDifference column difference
-     * @return true if the cell is adjacent
+     * @return true if adjacent
      */
     private boolean isAdjacentCell(int rowDifference, int columnDifference) {
         boolean sameCell = rowDifference == 0 && columnDifference == 0;
@@ -284,7 +283,7 @@ public class MyViewController implements IView, Observer {
     /**
      * Receives notifications from the ViewModel.
      *
-     * @param observable the observable object
+     * @param observable observable object
      * @param arg update message
      */
     @Override
@@ -300,6 +299,7 @@ public class MyViewController implements IView, Observer {
                 case "mazeGenerated" -> handleMazeGenerated();
                 case "playerMoved" -> handlePlayerMoved();
                 case "gameWon" -> handleGameWon();
+                case "solutionReady" -> handleSolutionReady();
                 default -> System.out.println("Unknown update: " + updateMessage);
             }
         });
@@ -345,6 +345,19 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
+     * Displays the solution path.
+     */
+    private void handleSolutionReady() {
+        if (mazeDisplayer == null || viewModel == null || viewModel.getSolution() == null) {
+            return;
+        }
+
+        mazeDisplayer.setSolution(viewModel.getSolution());
+        setStatusText("Solution path is displayed with Pac-Man dots.");
+        requestMazeFocus();
+    }
+
+    /**
      * Handles winning the game.
      */
     private void handleGameWon() {
@@ -363,9 +376,8 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Connects keyboard events to the scene.
-     * Call this method from HelloApplication after creating the Scene.
      *
-     * @param scene the main scene
+     * @param scene main scene
      */
     public void setSceneEvents(Scene scene) {
         scene.setOnKeyPressed(this::keyPressed);
@@ -385,7 +397,7 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
-     * Requests keyboard focus for the maze container.
+     * Requests focus for keyboard movement.
      */
     public void requestMazeFocus() {
         Platform.runLater(() -> {
@@ -449,7 +461,7 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
-     * Displays an information alert to the user.
+     * Displays a message.
      *
      * @param message message to display
      */

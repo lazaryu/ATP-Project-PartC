@@ -2,21 +2,29 @@ package com.example.atpprojectpartc.Model;
 
 import algorithms.mazeGenerators.Maze;
 import algorithms.mazeGenerators.MyMazeGenerator;
+import algorithms.search.BestFirstSearch;
+import algorithms.search.ISearchingAlgorithm;
+import algorithms.search.SearchableMaze;
+import algorithms.search.Solution;
 
 import java.util.Observable;
 import java.util.Observer;
 
 /**
  * MyModel is responsible for the application logic.
- * It creates the maze, stores the player position, validates movement,
- * and notifies the ViewModel when something changes.
+ * It generates the maze, stores the player position,
+ * validates player movement, solves the maze,
+ * and notifies the ViewModel about changes.
  */
 @SuppressWarnings("deprecation")
 public class MyModel extends Observable implements IModel {
 
     private Maze maze;
+    private Solution solution;
+
     private int playerRow;
     private int playerColumn;
+
     private boolean gameFinished;
 
     /**
@@ -28,10 +36,13 @@ public class MyModel extends Observable implements IModel {
     @Override
     public void generateMaze(int rows, int columns) {
         MyMazeGenerator generator = new MyMazeGenerator();
+
         maze = generator.generate(rows, columns);
+        solution = null;
 
         playerRow = maze.getStartPosition().getRowIndex();
         playerColumn = maze.getStartPosition().getColumnIndex();
+
         gameFinished = false;
 
         setChanged();
@@ -39,10 +50,10 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Moves the player only if the movement is legal.
+     * Moves the player if the movement is legal.
      *
-     * @param rowChange row movement: -1 up, 1 down, 0 no row movement
-     * @param columnChange column movement: -1 left, 1 right, 0 no column movement
+     * @param rowChange row movement
+     * @param columnChange column movement
      */
     @Override
     public void movePlayer(int rowChange, int columnChange) {
@@ -53,7 +64,7 @@ public class MyModel extends Observable implements IModel {
         int newRow = playerRow + rowChange;
         int newColumn = playerColumn + columnChange;
 
-        if (!isMoveLegal(newRow, newColumn, rowChange, columnChange)) {
+        if (!isMoveLegal(newRow, newColumn)) {
             return;
         }
 
@@ -72,61 +83,40 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Checks if the requested movement is legal.
-     * A regular move is legal if the target cell is open.
-     * A diagonal move is legal only if the target is open and
-     * the diagonal can be reached by an L-shaped path through open cells.
-     *
-     * @param newRow target row
-     * @param newColumn target column
-     * @param rowChange row movement
-     * @param columnChange column movement
-     * @return true if the player may move there
+     * Solves the current maze using the searching algorithm from Part B.
      */
-    private boolean isMoveLegal(int newRow, int newColumn, int rowChange, int columnChange) {
-        if (!isOpenCell(newRow, newColumn)) {
-            return false;
+    @Override
+    public void solveMaze() {
+        if (maze == null) {
+            return;
         }
 
-        boolean isDiagonalMove = Math.abs(rowChange) == 1 && Math.abs(columnChange) == 1;
+        ISearchingAlgorithm searchingAlgorithm = new BestFirstSearch();
+        SearchableMaze searchableMaze = new SearchableMaze(maze);
 
-        if (!isDiagonalMove) {
-            return true;
-        }
+        solution = searchingAlgorithm.solve(searchableMaze);
 
-        /*
-         * Diagonal movement is allowed only if the player could reach
-         * the same target cell using two regular non-diagonal moves.
-         *
-         * Example for up-right:
-         * path 1: up, then right
-         * path 2: right, then up
-         *
-         * If at least one of these L-shaped paths is open, the diagonal is legal.
-         */
-        boolean pathThroughRowIsOpen = isOpenCell(playerRow + rowChange, playerColumn);
-        boolean pathThroughColumnIsOpen = isOpenCell(playerRow, playerColumn + columnChange);
-
-        return pathThroughRowIsOpen || pathThroughColumnIsOpen;
+        setChanged();
+        notifyObservers("solutionReady");
     }
 
     /**
-     * Checks if a cell is inside the maze and is not a wall.
+     * Checks if a movement is legal.
      *
      * @param row row index
      * @param column column index
-     * @return true if the cell is open
+     * @return true if legal
      */
-    private boolean isOpenCell(int row, int column) {
+    private boolean isMoveLegal(int row, int column) {
         return isInsideMaze(row, column) && !isWall(row, column);
     }
 
     /**
-     * Checks if a position is inside the maze.
+     * Checks if a cell is inside the maze.
      *
      * @param row row index
      * @param column column index
-     * @return true if inside the maze
+     * @return true if inside maze
      */
     private boolean isInsideMaze(int row, int column) {
         int[][] mazeMatrix = maze.getMaze();
@@ -138,20 +128,20 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Checks if a position is a wall.
+     * Checks if a cell is a wall.
      *
      * @param row row index
      * @param column column index
-     * @return true if the cell is a wall
+     * @return true if wall
      */
     private boolean isWall(int row, int column) {
         return maze.getMaze()[row][column] == 1;
     }
 
     /**
-     * Checks if the player reached the goal position.
+     * Checks if the player reached the goal.
      *
-     * @return true if the player reached the goal
+     * @return true if player reached goal
      */
     private boolean isPlayerAtGoal() {
         return playerRow == maze.getGoalPosition().getRowIndex()
@@ -169,7 +159,17 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Returns the player's current row.
+     * Returns the current solution.
+     *
+     * @return current solution
+     */
+    @Override
+    public Solution getSolution() {
+        return solution;
+    }
+
+    /**
+     * Returns the player row.
      *
      * @return player row
      */
@@ -179,7 +179,7 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Returns the player's current column.
+     * Returns the player column.
      *
      * @return player column
      */
@@ -189,7 +189,7 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Adds an observer to the model.
+     * Assigns an observer to the model.
      *
      * @param observer observer to add
      */
@@ -199,11 +199,10 @@ public class MyModel extends Observable implements IModel {
     }
 
     /**
-     * Stops resources before closing the application.
-     * Later, if the model starts servers from Part B, they should be stopped here.
+     * Stops program resources.
      */
     @Override
     public void stopProgram() {
-        // No resources to stop yet.
+        // Later, if servers are started from Part B, stop them here.
     }
 }

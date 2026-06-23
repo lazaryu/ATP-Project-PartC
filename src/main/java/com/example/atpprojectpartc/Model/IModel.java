@@ -1,12 +1,14 @@
 package com.example.atpprojectpartc.Model;
 
 import algorithms.mazeGenerators.Maze;
+import algorithms.search.Solution;
 
 import java.util.Observer;
 
 /**
- * Defines the operations that the ViewModel can request from the Model.
+ * IModel defines the operations of the Model layer.
  */
+@SuppressWarnings("deprecation")
 public interface IModel {
 
     /**
@@ -18,12 +20,17 @@ public interface IModel {
     void generateMaze(int rows, int columns);
 
     /**
-     * Moves the player by row and column changes.
+     * Moves the player.
      *
      * @param rowChange row movement
      * @param columnChange column movement
      */
     void movePlayer(int rowChange, int columnChange);
+
+    /**
+     * Solves the current maze.
+     */
+    void solveMaze();
 
     /**
      * Returns the current maze.
@@ -33,28 +40,35 @@ public interface IModel {
     Maze getMaze();
 
     /**
-     * Returns the player's current row.
+     * Returns the current solution.
+     *
+     * @return current solution
+     */
+    Solution getSolution();
+
+    /**
+     * Returns the player row.
      *
      * @return player row
      */
     int getPlayerRow();
 
     /**
-     * Returns the player's current column.
+     * Returns the player column.
      *
      * @return player column
      */
     int getPlayerColumn();
 
     /**
-     * Adds an observer to the model.
+     * Assigns an observer to the model.
      *
      * @param observer observer to add
      */
     void assignObserver(Observer observer);
 
     /**
-     * Stops resources before closing the application.
+     * Stops program resources.
      */
     void stopProgram();
 }

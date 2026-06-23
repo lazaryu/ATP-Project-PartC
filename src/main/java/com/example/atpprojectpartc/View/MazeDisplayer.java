@@ -6,26 +6,54 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 /**
- * MazeDisplayer is responsible for drawing the maze on the screen.
+ * MazeDisplayer is a custom JavaFX control that draws the maze on a Canvas.
  */
 public class MazeDisplayer extends Canvas {
 
     private Maze maze;
+    private int playerRow;
+    private int playerColumn;
 
     /**
-     * Sets the maze and redraws it.
+     * Sets the maze and player position.
      *
-     * @param maze the maze to display
+     * @param maze maze to display
+     * @param playerRow player row
+     * @param playerColumn player column
      */
-    public void setMaze(Maze maze) {
+    public void setMaze(Maze maze, int playerRow, int playerColumn) {
         this.maze = maze;
-        drawMaze();
+        this.playerRow = playerRow;
+        this.playerColumn = playerColumn;
+        draw();
     }
 
     /**
-     * Draws the current maze on the canvas.
+     * Updates the player position and redraws the maze.
+     *
+     * @param playerRow player row
+     * @param playerColumn player column
      */
-    public void drawMaze() {
+    public void updatePlayerPosition(int playerRow, int playerColumn) {
+        this.playerRow = playerRow;
+        this.playerColumn = playerColumn;
+        draw();
+    }
+
+    /**
+     * Draws the maze, goal, and player.
+     */
+    private void draw() {
+        GraphicsContext graphicsContext = getGraphicsContext2D();
+
+        double canvasWidth = getWidth();
+        double canvasHeight = getHeight();
+
+        graphicsContext.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        graphicsContext.setFill(Color.web("#eceff1"));
+        graphicsContext.fillRect(0, 0, canvasWidth, canvasHeight);
+
         if (maze == null) {
             return;
         }
@@ -35,23 +63,29 @@ public class MazeDisplayer extends Canvas {
         int rows = mazeMatrix.length;
         int columns = mazeMatrix[0].length;
 
-        double canvasWidth = getWidth();
-        double canvasHeight = getHeight();
-
         double cellWidth = canvasWidth / columns;
         double cellHeight = canvasHeight / rows;
 
-        GraphicsContext graphicsContext = getGraphicsContext2D();
+        drawCells(graphicsContext, mazeMatrix, cellWidth, cellHeight);
+        drawGoal(graphicsContext, cellWidth, cellHeight);
+        drawPlayer(graphicsContext, cellWidth, cellHeight);
+    }
 
-        graphicsContext.clearRect(0, 0, canvasWidth, canvasHeight);
-
-        for (int row = 0; row < rows; row++) {
-            for (int column = 0; column < columns; column++) {
-
+    /**
+     * Draws all maze cells.
+     *
+     * @param graphicsContext graphics context
+     * @param mazeMatrix maze matrix
+     * @param cellWidth cell width
+     * @param cellHeight cell height
+     */
+    private void drawCells(GraphicsContext graphicsContext, int[][] mazeMatrix, double cellWidth, double cellHeight) {
+        for (int row = 0; row < mazeMatrix.length; row++) {
+            for (int column = 0; column < mazeMatrix[row].length; column++) {
                 if (mazeMatrix[row][column] == 1) {
-                    graphicsContext.setFill(Color.BLACK);
+                    graphicsContext.setFill(Color.web("#102a43"));
                 } else {
-                    graphicsContext.setFill(Color.WHITE);
+                    graphicsContext.setFill(Color.web("#f8f9fa"));
                 }
 
                 graphicsContext.fillRect(
@@ -62,38 +96,57 @@ public class MazeDisplayer extends Canvas {
                 );
             }
         }
-
-        drawStartAndGoal(graphicsContext, cellWidth, cellHeight);
     }
 
     /**
-     * Draws the start and goal positions.
+     * Draws the goal position.
      *
      * @param graphicsContext graphics context
-     * @param cellWidth width of one cell
-     * @param cellHeight height of one cell
+     * @param cellWidth cell width
+     * @param cellHeight cell height
      */
-    private void drawStartAndGoal(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
-        int startRow = maze.getStartPosition().getRowIndex();
-        int startColumn = maze.getStartPosition().getColumnIndex();
-
+    private void drawGoal(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
         int goalRow = maze.getGoalPosition().getRowIndex();
         int goalColumn = maze.getGoalPosition().getColumnIndex();
 
-        graphicsContext.setFill(Color.GREEN);
-        graphicsContext.fillRect(
-                startColumn * cellWidth,
-                startRow * cellHeight,
-                cellWidth,
-                cellHeight
+        double x = goalColumn * cellWidth;
+        double y = goalRow * cellHeight;
+
+        graphicsContext.setFill(Color.web("#ffb703"));
+        graphicsContext.fillOval(
+                x + cellWidth * 0.15,
+                y + cellHeight * 0.15,
+                cellWidth * 0.7,
+                cellHeight * 0.7
+        );
+    }
+
+    /**
+     * Draws the player.
+     *
+     * @param graphicsContext graphics context
+     * @param cellWidth cell width
+     * @param cellHeight cell height
+     */
+    private void drawPlayer(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
+        double x = playerColumn * cellWidth;
+        double y = playerRow * cellHeight;
+
+        graphicsContext.setFill(Color.web("#0078d7"));
+        graphicsContext.fillOval(
+                x + cellWidth * 0.12,
+                y + cellHeight * 0.12,
+                cellWidth * 0.76,
+                cellHeight * 0.76
         );
 
-        graphicsContext.setFill(Color.RED);
-        graphicsContext.fillRect(
-                goalColumn * cellWidth,
-                goalRow * cellHeight,
-                cellWidth,
-                cellHeight
+        graphicsContext.setStroke(Color.WHITE);
+        graphicsContext.setLineWidth(2);
+        graphicsContext.strokeOval(
+                x + cellWidth * 0.12,
+                y + cellHeight * 0.12,
+                cellWidth * 0.76,
+                cellHeight * 0.76
         );
     }
 }

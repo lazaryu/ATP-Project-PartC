@@ -1,0 +1,134 @@
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-background-color: linear-gradient(to bottom right, #101820, #1f3545);
+}
+
+.screen {
+    -fx-background-color: linear-gradient(to bottom right, #101820, #1f3545);
+    -fx-padding: 40px;
+}
+
+.main-title {
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f8;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 8, 0.3, 0, 3);
+}
+
+.subtitle {
+    -fx-font-size: 20px;
+    -fx-text-fill: #c9d6df;
+}
+
+.settings-box {
+    -fx-background-color: rgba(255, 255, 255, 0.10);
+    -fx-background-radius: 18px;
+    -fx-padding: 25px;
+    -fx-border-color: rgba(255, 255, 255, 0.25);
+    -fx-border-radius: 18px;
+}
+
+.form-label {
+    -fx-font-size: 18px;
+    -fx-text-fill: #f8f8f8;
+    -fx-min-width: 90px;
+}
+
+.input-field {
+    -fx-font-size: 17px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px;
+}
+
+.main-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-color: #0078d7;
+    -fx-background-radius: 12px;
+    -fx-padding: 12px 35px;
+    -fx-cursor: hand;
+}
+
+.main-button:hover {
+    -fx-background-color: #1594f2;
+}
+
+.secondary-button {
+    -fx-font-size: 17px;
+    -fx-text-fill: white;
+    -fx-background-color: #455a64;
+    -fx-background-radius: 12px;
+    -fx-padding: 11px 35px;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #607d8b;
+}
+
+.danger-button {
+    -fx-font-size: 17px;
+    -fx-text-fill: white;
+    -fx-background-color: #b3261e;
+    -fx-background-radius: 12px;
+    -fx-padding: 11px 35px;
+    -fx-cursor: hand;
+}
+
+.danger-button:hover {
+    -fx-background-color: #d93025;
+}
+
+.game-screen {
+    -fx-background-color: linear-gradient(to bottom right, #e8eef3, #cfd8dc);
+    -fx-padding: 10px;
+}
+
+.game-title {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #102a43;
+}
+
+.status-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: #334e68;
+}
+
+.main-button-small {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-color: #0078d7;
+    -fx-background-radius: 9px;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.secondary-button-small {
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-background-color: #455a64;
+    -fx-background-radius: 9px;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.danger-button-small {
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-background-color: #b3261e;
+    -fx-background-radius: 9px;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.maze-pane {
+    -fx-background-color: #eeeeee;
+    -fx-border-color: #102a43;
+    -fx-border-width: 3px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}

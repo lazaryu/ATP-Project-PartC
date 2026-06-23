@@ -16,9 +16,30 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
+
+import java.io.File;
+import java.io.IOException;
+
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Optional;
+
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * MyViewController is the View layer controller.
@@ -52,6 +73,8 @@ public class MyViewController implements IView, Observer {
     private MazeDisplayer mazeDisplayer;
     private MyViewModel viewModel;
 
+    private final SoundManager soundManager = new SoundManager();
+
     /**
      * Initializes the custom MazeDisplayer and places it inside the maze pane.
      */
@@ -75,6 +98,7 @@ public class MyViewController implements IView, Observer {
         mazePane.heightProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
 
         showStartScreen();
+        soundManager.playIntroMusic();
     }
 
     /**
@@ -90,6 +114,8 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles click on Start Game.
+     * This only opens the setup screen.
+     * The game music starts only after a maze is generated.
      */
     @FXML
     public void onStartGameClicked() {
@@ -97,7 +123,8 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
-     * Handles click on Back.
+     * Handles click on Back from the setup screen.
+     * The intro music continues playing.
      */
     @FXML
     public void onBackToStartClicked() {
@@ -152,14 +179,17 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles click on New Maze.
+     * Stops the current game music and returns to the setup screen.
      */
     @FXML
     public void onNewMazeClicked() {
+        soundManager.playIntroMusic();
         showSetupScreen();
     }
 
     /**
-     * Handles click on Exit Game.
+     * Handles click on Exit Game from the maze screen.
+     * Plays the loss sound and then returns to the intro music.
      */
     @FXML
     public void onExitGameClicked() {
@@ -170,6 +200,7 @@ public class MyViewController implements IView, Observer {
 
         if (shouldExit) {
             showStartScreen();
+            soundManager.playLossThenIntroMusic();
         } else {
             requestMazeFocus();
         }
@@ -307,6 +338,8 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Updates the view after a new maze was generated.
+     * This is the point where the actual maze screen opens,
+     * so this is where the Pacman music starts.
      */
     private void handleMazeGenerated() {
         if (mazeDisplayer == null) {
@@ -318,6 +351,8 @@ public class MyViewController implements IView, Observer {
                 viewModel.getPlayerRow(),
                 viewModel.getPlayerColumn()
         );
+
+        soundManager.playGameMusic();
 
         setStatusText("Move with arrows, NumPad 8/2/4/6/7/9/1/3, or move the mouse over adjacent cells.");
         showGameScreen();
@@ -359,6 +394,7 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles winning the game.
+     * Stops the Pacman music and plays the victory music.
      */
     private void handleGameWon() {
         if (mazeDisplayer == null) {
@@ -370,8 +406,95 @@ public class MyViewController implements IView, Observer {
                 viewModel.getPlayerColumn()
         );
 
+        soundManager.playVictoryMusic();
+
         setStatusText("You solved the maze!");
-        showInformationAlert("Victory", "Great job! You solved the maze.");
+        showPacmanVictoryDialog();
+    }
+
+    /**
+     * Shows a custom Pac-Man styled victory dialog.
+     */
+    private void showPacmanVictoryDialog() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Victory");
+
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getButtonTypes().add(ButtonType.OK);
+
+        dialogPane.setStyle(
+                "-fx-background-color: #000000;" +
+                        "-fx-border-color: #FFD700;" +
+                        "-fx-border-width: 4;" +
+                        "-fx-border-radius: 18;" +
+                        "-fx-background-radius: 18;"
+        );
+
+        Label titleLabel = new Label("YOU WIN!");
+        titleLabel.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 52));
+        titleLabel.setTextFill(Color.web("#FFD700"));
+        titleLabel.setEffect(new DropShadow(18, Color.web("#FFD700")));
+
+        Label messageLabel = new Label("Great job! You solved the maze.");
+        messageLabel.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 28));
+        messageLabel.setTextFill(Color.web("#FFD700"));
+        messageLabel.setWrapText(true);
+        messageLabel.setAlignment(Pos.CENTER);
+
+        VBox contentBox = new VBox(35);
+        contentBox.setAlignment(Pos.CENTER);
+        contentBox.setPadding(new Insets(45, 60, 35, 60));
+        contentBox.setStyle(
+                "-fx-background-color: #000000;" +
+                        "-fx-background-radius: 18;"
+        );
+
+        contentBox.getChildren().addAll(
+                titleLabel,
+                messageLabel
+        );
+
+        dialogPane.setContent(contentBox);
+
+        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+        okButton.setText("OK");
+        okButton.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 18));
+        okButton.setTextFill(Color.BLACK);
+        okButton.setStyle(
+                "-fx-background-color: #FFD700;" +
+                        "-fx-background-radius: 20;" +
+                        "-fx-border-color: #FFFFFF;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-border-radius: 20;" +
+                        "-fx-padding: 8 30 8 30;" +
+                        "-fx-cursor: hand;"
+        );
+
+        okButton.setOnMouseEntered(event ->
+                okButton.setStyle(
+                        "-fx-background-color: #FFF176;" +
+                                "-fx-background-radius: 20;" +
+                                "-fx-border-color: #FFFFFF;" +
+                                "-fx-border-width: 2;" +
+                                "-fx-border-radius: 20;" +
+                                "-fx-padding: 8 30 8 30;" +
+                                "-fx-cursor: hand;"
+                )
+        );
+
+        okButton.setOnMouseExited(event ->
+                okButton.setStyle(
+                        "-fx-background-color: #FFD700;" +
+                                "-fx-background-radius: 20;" +
+                                "-fx-border-color: #FFFFFF;" +
+                                "-fx-border-width: 2;" +
+                                "-fx-border-radius: 20;" +
+                                "-fx-padding: 8 30 8 30;" +
+                                "-fx-cursor: hand;"
+                )
+        );
+
+        dialog.showAndWait();
     }
 
     /**
@@ -456,8 +579,10 @@ public class MyViewController implements IView, Observer {
      * @param visible true if visible
      */
     private void setPaneVisible(Node node, boolean visible) {
-        node.setVisible(visible);
-        node.setManaged(visible);
+        if (node != null) {
+            node.setVisible(visible);
+            node.setManaged(visible);
+        }
     }
 
     /**
@@ -525,6 +650,8 @@ public class MyViewController implements IView, Observer {
         );
 
         if (shouldExit) {
+            soundManager.stopAllMusic();
+
             if (viewModel != null) {
                 viewModel.stopProgram();
             }
@@ -532,5 +659,117 @@ public class MyViewController implements IView, Observer {
             Platform.exit();
             System.exit(0);
         }
+    }
+
+    /**
+     * Handles click on Save Maze.
+     * Saves the current maze to a .maze file.
+     */
+    @FXML
+    public void onSaveMazeClicked() {
+        if (viewModel == null || viewModel.getMaze() == null) {
+            showErrorAlert("No maze", "There is no maze to save.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Maze");
+        fileChooser.setInitialFileName("savedMaze.maze");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Maze Files (*.maze)", "*.maze")
+        );
+
+        File selectedFile = fileChooser.showSaveDialog(getCurrentWindow());
+
+        if (selectedFile == null) {
+            requestMazeFocus();
+            return;
+        }
+
+        File fileToSave = ensureMazeExtension(selectedFile);
+
+        try {
+            viewModel.saveMaze(fileToSave);
+            showInformationAlert("Maze Saved", "The maze was saved successfully.");
+        } catch (IOException e) {
+            showErrorAlert("Save Error", "Could not save the maze file.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            showErrorAlert("Save Error", e.getMessage());
+            e.printStackTrace();
+        }
+
+        requestMazeFocus();
+    }
+
+    /**
+     * Handles click on Load Maze.
+     * Loads a maze from a .maze file and opens the game screen.
+     */
+    @FXML
+    public void onLoadMazeClicked() {
+        if (viewModel == null) {
+            displayMessage("ViewModel is not connected.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Load Maze");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Maze Files (*.maze)", "*.maze")
+        );
+
+        File selectedFile = fileChooser.showOpenDialog(getCurrentWindow());
+
+        if (selectedFile == null) {
+            return;
+        }
+
+        try {
+            viewModel.loadMaze(selectedFile);
+        } catch (IOException e) {
+            showErrorAlert("Load Error", "Could not load the maze file.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            showErrorAlert("Load Error", "The selected file is not a valid maze file.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Adds .maze extension if the user did not type it.
+     *
+     * @param file selected file
+     * @return file with .maze extension
+     */
+    private File ensureMazeExtension(File file) {
+        String filePath = file.getAbsolutePath();
+
+        if (!filePath.toLowerCase().endsWith(".maze")) {
+            return new File(filePath + ".maze");
+        }
+
+        return file;
+    }
+
+    /**
+     * Returns the current application window for FileChooser dialogs.
+     *
+     * @return current window
+     */
+    private Window getCurrentWindow() {
+        if (mazePane != null && mazePane.getScene() != null) {
+            return mazePane.getScene().getWindow();
+        }
+
+        if (setupPane != null && setupPane.getScene() != null) {
+            return setupPane.getScene().getWindow();
+        }
+
+        if (startPane != null && startPane.getScene() != null) {
+            return startPane.getScene().getWindow();
+        }
+
+        return null;
     }
 }

@@ -6,6 +6,8 @@ import com.example.atpprojectpartc.Model.IModel;
 
 import java.util.Observable;
 import java.util.Observer;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * MyViewModel connects the View layer with the Model layer.
@@ -164,5 +166,25 @@ public class MyViewModel extends Observable implements Observer {
             setChanged();
             notifyObservers(arg);
         }
+    }
+
+    /**
+     * Saves the current maze.
+     *
+     * @param file file to save to
+     * @throws IOException if saving fails
+     */
+    public void saveMaze(File file) throws IOException {
+        model.saveMaze(file);
+    }
+
+    /**
+     * Loads a maze from a file.
+     *
+     * @param file file to load from
+     * @throws IOException if loading fails
+     */
+    public void loadMaze(File file) throws IOException {
+        model.loadMaze(file);
     }
 }

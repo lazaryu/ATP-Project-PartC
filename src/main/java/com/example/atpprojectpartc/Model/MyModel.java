@@ -1,5 +1,8 @@
 package com.example.atpprojectpartc.Model;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import algorithms.mazeGenerators.Maze;
 import algorithms.mazeGenerators.MyMazeGenerator;
 import algorithms.search.BestFirstSearch;
@@ -204,5 +207,42 @@ public class MyModel extends Observable implements IModel {
     @Override
     public void stopProgram() {
         // Later, if servers are started from Part B, stop them here.
+    }
+
+    /**
+     * Saves the current maze to a file.
+     *
+     * @param file file to save to
+     * @throws IOException if saving fails
+     */
+    @Override
+    public void saveMaze(File file) throws IOException {
+        if (maze == null) {
+            throw new IllegalStateException("There is no maze to save.");
+        }
+
+        Files.write(file.toPath(), maze.toByteArray());
+    }
+
+    /**
+     * Loads a maze from a file.
+     *
+     * @param file file to load from
+     * @throws IOException if loading fails
+     */
+    @Override
+    public void loadMaze(File file) throws IOException {
+        byte[] mazeBytes = Files.readAllBytes(file.toPath());
+
+        maze = new Maze(mazeBytes);
+        solution = null;
+
+        playerRow = maze.getStartPosition().getRowIndex();
+        playerColumn = maze.getStartPosition().getColumnIndex();
+
+        gameFinished = false;
+
+        setChanged();
+        notifyObservers("mazeGenerated");
     }
 }

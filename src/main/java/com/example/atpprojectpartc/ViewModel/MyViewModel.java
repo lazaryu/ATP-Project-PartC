@@ -137,4 +137,14 @@ public class MyViewModel extends Observable implements Observer {
     public void stopProgram() {
         model.stopProgram();
     }
+
+    /**
+     * Moves the player by a general row and column change.
+     *
+     * @param rowChange row movement
+     * @param columnChange column movement
+     */
+    public void moveByDelta(int rowChange, int columnChange) {
+        model.movePlayer(rowChange, columnChange);
+    }
 }

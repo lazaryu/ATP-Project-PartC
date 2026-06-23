@@ -10,7 +10,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
-
+import javafx.scene.input.MouseEvent;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -50,6 +50,11 @@ public class MyViewController implements IView, Observer {
 
         mazeContainer.getChildren().add(mazeDisplayer);
         mazeContainer.setFocusTraversable(true);
+
+        mazeDisplayer.setOnMouseMoved(this::mouseMoved);
+        mazeDisplayer.setOnMouseDragged(this::mouseMoved);
+        mazeContainer.setOnMouseMoved(this::mouseMoved);
+        mazeContainer.setOnMouseDragged(this::mouseMoved);
 
         mazeContainer.widthProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
         mazeContainer.heightProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
@@ -119,15 +124,15 @@ public class MyViewController implements IView, Observer {
      */
     private void handleKeyPressed(KeyCode code) {
         switch (code) {
-            case NUMPAD8, UP -> viewModel.moveUp();
-            case NUMPAD2, DOWN -> viewModel.moveDown();
-            case NUMPAD4, LEFT -> viewModel.moveLeft();
-            case NUMPAD6, RIGHT -> viewModel.moveRight();
+            case NUMPAD8, DIGIT8, UP -> viewModel.moveUp();
+            case NUMPAD2, DIGIT2, DOWN -> viewModel.moveDown();
+            case NUMPAD4, DIGIT4, LEFT -> viewModel.moveLeft();
+            case NUMPAD6, DIGIT6, RIGHT -> viewModel.moveRight();
 
-            case NUMPAD7 -> viewModel.moveUpLeft();
-            case NUMPAD9 -> viewModel.moveUpRight();
-            case NUMPAD1 -> viewModel.moveDownLeft();
-            case NUMPAD3 -> viewModel.moveDownRight();
+            case NUMPAD7, DIGIT7 -> viewModel.moveUpLeft();
+            case NUMPAD9, DIGIT9 -> viewModel.moveUpRight();
+            case NUMPAD1, DIGIT1 -> viewModel.moveDownLeft();
+            case NUMPAD3, DIGIT3 -> viewModel.moveDownRight();
 
             default -> {
                 return;
@@ -135,6 +140,57 @@ public class MyViewController implements IView, Observer {
         }
 
         requestMazeFocus();
+    }
+
+    /**
+     * Handles mouse movement over the maze.
+     * If the mouse moves into a cell adjacent to the player,
+     * the player tries to move to that cell.
+     *
+     * @param mouseEvent mouse movement event
+     */
+    private void mouseMoved(MouseEvent mouseEvent) {
+        if (viewModel == null || viewModel.getMaze() == null || mazeDisplayer == null) {
+            return;
+        }
+
+        int[][] mazeMap = viewModel.getMaze().getMaze();
+
+        int rows = mazeMap.length;
+        int columns = mazeMap[0].length;
+
+        double cellWidth = mazeDisplayer.getWidth() / columns;
+        double cellHeight = mazeDisplayer.getHeight() / rows;
+
+        int mouseColumn = (int) (mouseEvent.getX() / cellWidth);
+        int mouseRow = (int) (mouseEvent.getY() / cellHeight);
+
+        int playerRow = viewModel.getPlayerRow();
+        int playerColumn = viewModel.getPlayerColumn();
+
+        int rowDifference = mouseRow - playerRow;
+        int columnDifference = mouseColumn - playerColumn;
+
+        if (isAdjacentCell(rowDifference, columnDifference)) {
+            viewModel.moveByDelta(rowDifference, columnDifference);
+        }
+
+        requestMazeFocus();
+    }
+
+    /**
+     * Checks if the target cell is adjacent to the player's current cell.
+     *
+     * @param rowDifference row difference
+     * @param columnDifference column difference
+     * @return true if the cell is adjacent
+     */
+    private boolean isAdjacentCell(int rowDifference, int columnDifference) {
+        boolean sameCell = rowDifference == 0 && columnDifference == 0;
+
+        return !sameCell
+                && Math.abs(rowDifference) <= 1
+                && Math.abs(columnDifference) <= 1;
     }
 
     /**
@@ -175,7 +231,7 @@ public class MyViewController implements IView, Observer {
                 viewModel.getPlayerColumn()
         );
 
-        setStatusText("Use NumPad 8/2/4/6 and 7/9/1/3 to move.");
+        setStatusText("Move with arrows, NumPad 8/2/4/6/7/9/1/3, or move the mouse over adjacent cells.");
         requestMazeFocus();
     }
 

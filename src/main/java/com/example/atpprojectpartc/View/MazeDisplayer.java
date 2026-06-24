@@ -7,13 +7,14 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.ArcType;
 
 import java.io.InputStream;
 
 /**
- * MazeDisplayer is responsible for drawing the maze in Pac-Man style.
- * It draws the maze walls, empty paths, player image, goal image,
- * and optionally solution dots only when a solution is requested.
+ * MazeDisplayer is a custom JavaFX Canvas component.
+ * It draws the maze, the player, the goal, the start marker,
+ * and the solution path when requested.
  */
 public class MazeDisplayer extends Canvas {
 
@@ -26,12 +27,21 @@ public class MazeDisplayer extends Canvas {
     private int startRow;
     private int startColumn;
 
+    /**
+     * Pac-Man image faces right by default.
+     *
+     * 0 degrees   = right
+     * 90 degrees  = down
+     * 180 degrees = left
+     * -90 degrees = up
+     */
+    private double pacmanRotationAngle = 0.0;
+
     private Image pacmanImage;
     private Image rewardImage;
 
     /**
      * Constructor.
-     * Loads the player and reward images.
      */
     public MazeDisplayer() {
         loadImages();
@@ -64,25 +74,33 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Sets the maze and player position.
+     * Sets a new maze and player position.
      *
      * @param maze maze to draw
      * @param playerRow player row
      * @param playerColumn player column
      */
     public void setMaze(Maze maze, int playerRow, int playerColumn) {
+        boolean isNewMaze = this.maze != maze;
+
         this.maze = maze;
         this.solution = null;
+
         this.playerRow = playerRow;
         this.playerColumn = playerColumn;
 
         this.startRow = maze.getStartPosition().getRowIndex();
         this.startColumn = maze.getStartPosition().getColumnIndex();
+
+        if (isNewMaze) {
+            pacmanRotationAngle = 0.0;
+        }
+
         drawMaze();
     }
 
     /**
-     * Sets the solution that should be displayed.
+     * Sets the solution to display on the maze.
      *
      * @param solution maze solution
      */
@@ -92,7 +110,7 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Clears the solution from the display.
+     * Clears the solution from the maze display.
      */
     public void clearSolution() {
         this.solution = null;
@@ -100,19 +118,47 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Updates the player position.
+     * Updates the player position and changes Pac-Man direction.
      *
-     * @param playerRow player row
-     * @param playerColumn player column
+     * @param newPlayerRow new player row
+     * @param newPlayerColumn new player column
      */
-    public void updatePlayerPosition(int playerRow, int playerColumn) {
-        this.playerRow = playerRow;
-        this.playerColumn = playerColumn;
+    public void updatePlayerPosition(int newPlayerRow, int newPlayerColumn) {
+        updatePacmanDirection(newPlayerRow, newPlayerColumn);
+
+        this.playerRow = newPlayerRow;
+        this.playerColumn = newPlayerColumn;
+
         drawMaze();
     }
 
     /**
-     * Draws the full maze.
+     * Updates Pac-Man mouth direction according to the movement direction.
+     *
+     * The original image faces right, so:
+     * moving right  -> angle 0
+     * moving down   -> angle 90
+     * moving left   -> angle 180
+     * moving up     -> angle -90
+     *
+     * @param newPlayerRow new player row
+     * @param newPlayerColumn new player column
+     */
+    private void updatePacmanDirection(int newPlayerRow, int newPlayerColumn) {
+        int rowDifference = newPlayerRow - playerRow;
+        int columnDifference = newPlayerColumn - playerColumn;
+
+        if (rowDifference == 0 && columnDifference == 0) {
+            return;
+        }
+
+        pacmanRotationAngle = Math.toDegrees(
+                Math.atan2(rowDifference, columnDifference)
+        );
+    }
+
+    /**
+     * Draws the complete maze.
      */
     public void drawMaze() {
         GraphicsContext graphicsContext = getGraphicsContext2D();
@@ -168,7 +214,7 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Draws a Pac-Man style wall.
+     * Draws a wall cell.
      *
      * @param graphicsContext graphics context
      * @param x x coordinate
@@ -182,12 +228,16 @@ public class MazeDisplayer extends Canvas {
 
         graphicsContext.setStroke(Color.web("#1e90ff"));
         graphicsContext.setLineWidth(2);
-        graphicsContext.strokeRect(x + 1, y + 1, cellWidth - 2, cellHeight - 2);
+        graphicsContext.strokeRect(
+                x + 1,
+                y + 1,
+                cellWidth - 2,
+                cellHeight - 2
+        );
     }
 
     /**
      * Draws an empty path cell.
-     * No dots are drawn here.
      *
      * @param graphicsContext graphics context
      * @param x x coordinate
@@ -201,7 +251,40 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Draws Pac-Man dots only on the solution path.
+     * Draws a green marker on the start position.
+     * The marker remains visible after Pac-Man moves away.
+     *
+     * @param graphicsContext graphics context
+     * @param cellWidth cell width
+     * @param cellHeight cell height
+     */
+    private void drawStartPosition(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
+        double x = startColumn * cellWidth;
+        double y = startRow * cellHeight;
+
+        double paddingX = cellWidth * 0.20;
+        double paddingY = cellHeight * 0.20;
+
+        graphicsContext.setFill(Color.web("#00FF66"));
+        graphicsContext.fillOval(
+                x + paddingX,
+                y + paddingY,
+                cellWidth - 2 * paddingX,
+                cellHeight - 2 * paddingY
+        );
+
+        graphicsContext.setStroke(Color.WHITE);
+        graphicsContext.setLineWidth(2);
+        graphicsContext.strokeOval(
+                x + paddingX,
+                y + paddingY,
+                cellWidth - 2 * paddingX,
+                cellHeight - 2 * paddingY
+        );
+    }
+
+    /**
+     * Draws solution dots if a solution exists.
      *
      * @param graphicsContext graphics context
      * @param cellWidth cell width
@@ -222,7 +305,9 @@ public class MazeDisplayer extends Canvas {
             int row = position[0];
             int column = position[1];
 
-            if (isPlayerPosition(row, column) || isGoalPosition(row, column) || isStartPosition(row, column)) {
+            if (isPlayerPosition(row, column) ||
+                    isGoalPosition(row, column) ||
+                    isStartPosition(row, column)) {
                 continue;
             }
 
@@ -239,26 +324,13 @@ public class MazeDisplayer extends Canvas {
                     dotSize
             );
         }
-
     }
 
     /**
-     * Checks if a cell is the start position.
-     *
-     * @param row row index
-     * @param column column index
-     * @return true if start position
-     */
-    private boolean isStartPosition(int row, int column) {
-        return row == startRow && column == startColumn;
-    }
-
-    /**
-     * Parses row and column from a maze state string.
-     * The expected format is usually "{row,column}".
+     * Parses row and column from a search state.
      *
      * @param state maze state
-     * @return int array with row and column, or null if parsing failed
+     * @return array of row and column, or null if parsing failed
      */
     private int[] parsePositionFromState(AState state) {
         try {
@@ -300,6 +372,17 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
+     * Checks if a cell is the start position.
+     *
+     * @param row row index
+     * @param column column index
+     * @return true if start position
+     */
+    private boolean isStartPosition(int row, int column) {
+        return row == startRow && column == startColumn;
+    }
+
+    /**
      * Checks if a cell is the goal position.
      *
      * @param row row index
@@ -312,44 +395,7 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Draws a green marker on the maze start position.
-     * The marker remains visible after the player moves away from the start cell.
-     *
-     * @param graphicsContext graphics context
-     * @param cellWidth cell width
-     * @param cellHeight cell height
-     */
-    private void drawStartPosition(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
-        if (maze == null) {
-            return;
-        }
-
-        double x = startColumn * cellWidth;
-        double y = startRow * cellHeight;
-
-        double paddingX = cellWidth * 0.18;
-        double paddingY = cellHeight * 0.18;
-
-        graphicsContext.setFill(Color.web("#00FF66"));
-        graphicsContext.fillOval(
-                x + paddingX,
-                y + paddingY,
-                cellWidth - 2 * paddingX,
-                cellHeight - 2 * paddingY
-        );
-
-        graphicsContext.setStroke(Color.WHITE);
-        graphicsContext.setLineWidth(2);
-        graphicsContext.strokeOval(
-                x + paddingX,
-                y + paddingY,
-                cellWidth - 2 * paddingX,
-                cellHeight - 2 * paddingY
-        );
-    }
-
-    /**
-     * Draws the reward image.
+     * Draws the goal image.
      *
      * @param graphicsContext graphics context
      * @param cellWidth cell width
@@ -385,7 +431,7 @@ public class MazeDisplayer extends Canvas {
     }
 
     /**
-     * Draws the Pac-Man player image.
+     * Draws the Pac-Man player.
      *
      * @param graphicsContext graphics context
      * @param cellWidth cell width
@@ -398,22 +444,89 @@ public class MazeDisplayer extends Canvas {
         double paddingX = cellWidth * 0.08;
         double paddingY = cellHeight * 0.08;
 
+        double drawX = x + paddingX;
+        double drawY = y + paddingY;
+        double drawWidth = cellWidth - 2 * paddingX;
+        double drawHeight = cellHeight - 2 * paddingY;
+
         if (pacmanImage != null) {
-            graphicsContext.drawImage(
-                    pacmanImage,
-                    x + paddingX,
-                    y + paddingY,
-                    cellWidth - 2 * paddingX,
-                    cellHeight - 2 * paddingY
+            drawRotatedPacmanImage(
+                    graphicsContext,
+                    drawX,
+                    drawY,
+                    drawWidth,
+                    drawHeight
             );
         } else {
-            graphicsContext.setFill(Color.YELLOW);
-            graphicsContext.fillOval(
-                    x + paddingX,
-                    y + paddingY,
-                    cellWidth - 2 * paddingX,
-                    cellHeight - 2 * paddingY
+            drawRotatedDefaultPacman(
+                    graphicsContext,
+                    drawX,
+                    drawY,
+                    drawWidth,
+                    drawHeight
             );
         }
+    }
+
+    /**
+     * Draws the Pac-Man image rotated around its center.
+     * The original image already faces right, so no rotation fix is needed.
+     *
+     * @param graphicsContext graphics context
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param width image width
+     * @param height image height
+     */
+    private void drawRotatedPacmanImage(GraphicsContext graphicsContext, double x, double y, double width, double height) {
+        double centerX = x + width / 2;
+        double centerY = y + height / 2;
+
+        graphicsContext.save();
+
+        graphicsContext.translate(centerX, centerY);
+        graphicsContext.rotate(pacmanRotationAngle);
+
+        graphicsContext.drawImage(
+                pacmanImage,
+                -width / 2,
+                -height / 2,
+                width,
+                height
+        );
+
+        graphicsContext.restore();
+    }
+
+    /**
+     * Draws a default Pac-Man shape if the image was not loaded.
+     *
+     * @param graphicsContext graphics context
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param width shape width
+     * @param height shape height
+     */
+    private void drawRotatedDefaultPacman(GraphicsContext graphicsContext, double x, double y, double width, double height) {
+        double centerX = x + width / 2;
+        double centerY = y + height / 2;
+
+        graphicsContext.save();
+
+        graphicsContext.translate(centerX, centerY);
+        graphicsContext.rotate(pacmanRotationAngle);
+
+        graphicsContext.setFill(Color.YELLOW);
+        graphicsContext.fillArc(
+                -width / 2,
+                -height / 2,
+                width,
+                height,
+                35,
+                290,
+                ArcType.ROUND
+        );
+
+        graphicsContext.restore();
     }
 }

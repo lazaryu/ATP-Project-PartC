@@ -430,7 +430,7 @@ public class MyViewController implements IView, Observer {
 
         soundManager.playGameMusic();
 
-        setStatusText("Move with arrows, NumPad 8/2/4/6/7/9/1/3, or move the mouse over adjacent cells.");
+        //setStatusText("Move with arrows, NumPad 8/2/4/6/7/9/1/3, or move the mouse over adjacent cells.");
         showGameScreen();
         requestMazeFocus();
     }
@@ -447,12 +447,6 @@ public class MyViewController implements IView, Observer {
                 viewModel.getPlayerRow(),
                 viewModel.getPlayerColumn()
         );
-
-        setStatusText("Player: (" +
-                viewModel.getPlayerRow() +
-                ", " +
-                viewModel.getPlayerColumn() +
-                ")");
     }
 
     /**

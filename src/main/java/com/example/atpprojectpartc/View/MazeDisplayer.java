@@ -23,6 +23,9 @@ public class MazeDisplayer extends Canvas {
     private int playerRow;
     private int playerColumn;
 
+    private int startRow;
+    private int startColumn;
+
     private Image pacmanImage;
     private Image rewardImage;
 
@@ -72,6 +75,9 @@ public class MazeDisplayer extends Canvas {
         this.solution = null;
         this.playerRow = playerRow;
         this.playerColumn = playerColumn;
+
+        this.startRow = maze.getStartPosition().getRowIndex();
+        this.startColumn = maze.getStartPosition().getColumnIndex();
         drawMaze();
     }
 
@@ -132,6 +138,7 @@ public class MazeDisplayer extends Canvas {
         double cellHeight = canvasHeight / rows;
 
         drawMazeCells(graphicsContext, mazeMatrix, cellWidth, cellHeight);
+        drawStartPosition(graphicsContext, cellWidth, cellHeight);
         drawSolutionPath(graphicsContext, cellWidth, cellHeight);
         drawGoal(graphicsContext, cellWidth, cellHeight);
         drawPlayer(graphicsContext, cellWidth, cellHeight);
@@ -215,7 +222,7 @@ public class MazeDisplayer extends Canvas {
             int row = position[0];
             int column = position[1];
 
-            if (isPlayerPosition(row, column) || isGoalPosition(row, column)) {
+            if (isPlayerPosition(row, column) || isGoalPosition(row, column) || isStartPosition(row, column)) {
                 continue;
             }
 
@@ -232,6 +239,18 @@ public class MazeDisplayer extends Canvas {
                     dotSize
             );
         }
+
+    }
+
+    /**
+     * Checks if a cell is the start position.
+     *
+     * @param row row index
+     * @param column column index
+     * @return true if start position
+     */
+    private boolean isStartPosition(int row, int column) {
+        return row == startRow && column == startColumn;
     }
 
     /**
@@ -290,6 +309,43 @@ public class MazeDisplayer extends Canvas {
     private boolean isGoalPosition(int row, int column) {
         return row == maze.getGoalPosition().getRowIndex()
                 && column == maze.getGoalPosition().getColumnIndex();
+    }
+
+    /**
+     * Draws a green marker on the maze start position.
+     * The marker remains visible after the player moves away from the start cell.
+     *
+     * @param graphicsContext graphics context
+     * @param cellWidth cell width
+     * @param cellHeight cell height
+     */
+    private void drawStartPosition(GraphicsContext graphicsContext, double cellWidth, double cellHeight) {
+        if (maze == null) {
+            return;
+        }
+
+        double x = startColumn * cellWidth;
+        double y = startRow * cellHeight;
+
+        double paddingX = cellWidth * 0.18;
+        double paddingY = cellHeight * 0.18;
+
+        graphicsContext.setFill(Color.web("#00FF66"));
+        graphicsContext.fillOval(
+                x + paddingX,
+                y + paddingY,
+                cellWidth - 2 * paddingX,
+                cellHeight - 2 * paddingY
+        );
+
+        graphicsContext.setStroke(Color.WHITE);
+        graphicsContext.setLineWidth(2);
+        graphicsContext.strokeOval(
+                x + paddingX,
+                y + paddingY,
+                cellWidth - 2 * paddingX,
+                cellHeight - 2 * paddingY
+        );
     }
 
     /**

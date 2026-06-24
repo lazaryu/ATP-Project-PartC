@@ -108,7 +108,9 @@
 
                 <Label text="PAC-MAZE" styleClass="game-title"/>
                 <Label fx:id="statusLabel"
-                       text="Use the arrows, numbers, or mouse to move"
+                       text=""
+                       visible="false"
+                       managed="false"
                        styleClass="status-label"/>
 
                 <HBox alignment="CENTER" spacing="12.0">

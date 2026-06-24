@@ -1,11 +1,42 @@
-```css
 .root {
     -fx-font-family: "Segoe UI", Arial, sans-serif;
 }
 
+/* Top menu bar */
+.pacman-menu-bar {
+    -fx-background-color: #000000;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.pacman-menu-bar .label {
+    -fx-text-fill: #ffd400;
+    -fx-font-weight: bold;
+}
+
+.menu-item .label {
+    -fx-text-fill: #ffd400;
+    -fx-font-weight: bold;
+}
+
+.context-menu {
+    -fx-background-color: #111111;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 2px;
+}
+
+.menu-item:focused {
+    -fx-background-color: #333333;
+}
+
+.menu:hover,
+.menu:showing {
+    -fx-background-color: #222222;
+}
+
 /* Start and setup screens with Pacman background */
 .pacman-screen {
-    -fx-background-image: url("images/Pacman_start.png");
+    -fx-background-image: url("Images/Pacman_start.png");
     -fx-background-size: cover;
     -fx-background-position: center center;
     -fx-background-repeat: no-repeat;
@@ -38,26 +69,88 @@
 }
 
 .pacman-subtitle {
-    -fx-font-size: 20px;
-    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.55), 10, 0.4, 0, 0);
 }
 
 .form-label {
-    -fx-font-size: 18px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-min-width: 90px;
+    -fx-text-fill: #ffd400;
+    -fx-min-width: 115px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.45), 8, 0.35, 0, 0);
 }
 
+/* Old TextField style, kept in case another screen still uses it */
 .input-field {
-    -fx-font-size: 18px;
-    -fx-background-radius: 10px;
-    -fx-border-radius: 10px;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
     -fx-border-color: #ffd400;
-    -fx-border-width: 2px;
+    -fx-border-width: 3px;
     -fx-padding: 8px;
 }
 
+/* Spinner for rows and columns */
+.dimension-spinner {
+    -fx-background-color: transparent;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 3px;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+}
+
+.dimension-spinner .text-field {
+    -fx-background-color: white;
+    -fx-text-fill: #222222;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 2px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 8px;
+}
+
+.dimension-spinner .increment-arrow-button {
+    -fx-background-color: #ffd400;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-background-radius: 0 14px 0 0;
+    -fx-border-radius: 0 14px 0 0;
+    -fx-cursor: hand;
+}
+
+.dimension-spinner .decrement-arrow-button {
+    -fx-background-color: #ffd400;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-background-radius: 0 0 14px 0;
+    -fx-border-radius: 0 0 14px 0;
+    -fx-cursor: hand;
+}
+
+.dimension-spinner .increment-arrow-button:hover {
+    -fx-background-color: #fff176;
+    -fx-background-radius: 0 14px 0 0;
+    -fx-border-radius: 0 14px 0 0;
+}
+
+.dimension-spinner .decrement-arrow-button:hover {
+    -fx-background-color: #fff176;
+    -fx-background-radius: 0 0 14px 0;
+    -fx-border-radius: 0 0 14px 0;
+}
+
+.dimension-spinner .increment-arrow,
+.dimension-spinner .decrement-arrow {
+    -fx-background-color: black;
+}
+
+/* Main menu buttons */
 .pacman-main-button {
     -fx-font-size: 20px;
     -fx-font-weight: bold;
@@ -140,6 +233,12 @@
     -fx-cursor: hand;
 }
 
+.game-button:hover {
+    -fx-background-color: #fff176;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
 .game-secondary-button {
     -fx-font-size: 15px;
     -fx-font-weight: bold;
@@ -148,6 +247,12 @@
     -fx-background-radius: 12px;
     -fx-padding: 8px 20px;
     -fx-cursor: hand;
+}
+
+.game-secondary-button:hover {
+    -fx-background-color: #607d8b;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
 }
 
 .game-exit-button {
@@ -160,6 +265,12 @@
     -fx-cursor: hand;
 }
 
+.game-exit-button:hover {
+    -fx-background-color: #ff3b3b;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
 .maze-pane {
     -fx-background-color: #000000;
     -fx-border-color: #005dff;
@@ -167,4 +278,3 @@
     -fx-border-radius: 4px;
     -fx-background-radius: 4px;
 }
-```

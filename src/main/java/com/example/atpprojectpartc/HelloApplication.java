@@ -35,6 +35,7 @@ public class HelloApplication extends Application {
         Scene scene = new Scene(root, 900, 650);
 
         controller.setSceneEvents(scene);
+        stage.setOnCloseRequest(controller::handleWindowClose);
 
         stage.setTitle("Maze Game");
         stage.setScene(scene);

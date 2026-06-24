@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
+<?import javafx.scene.control.Spinner?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -10,138 +13,169 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane fx:id="rootPane"
-           xmlns="http://javafx.com/javafx/17"
-           xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="com.example.atpprojectpartc.View.MyViewController"
-           stylesheets="@MyViewStyle.css"
-           prefWidth="1000.0"
-           prefHeight="700.0">
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.atpprojectpartc.View.MyViewController"
+            stylesheets="@MyViewStyle.css"
+            prefWidth="1000.0"
+            prefHeight="700.0">
 
-    <!-- Start Screen -->
-    <VBox fx:id="startPane"
-          alignment="CENTER"
-          spacing="25.0"
-          styleClass="pacman-screen">
+    <top>
+        <MenuBar styleClass="pacman-menu-bar">
+            <Menu text="File">
+                <MenuItem text="New" onAction="#onNewMazeClicked"/>
+                <MenuItem text="Save" onAction="#onSaveMazeClicked"/>
+                <MenuItem text="Load" onAction="#onLoadMazeClicked"/>
+            </Menu>
 
-        <VBox alignment="CENTER" spacing="15.0" styleClass="menu-card">
-            <Label text="PAC-MAZE" styleClass="pacman-title"/>
-            <Label text="Find your way out" styleClass="pacman-subtitle"/>
+            <Menu text="Options">
+                <MenuItem text="Properties" onAction="#onPropertiesClicked"/>
+            </Menu>
 
-            <Button text="Start Game"
-                    onAction="#onStartGameClicked"
-                    styleClass="pacman-main-button"/>
+            <Menu text="Exit">
+                <MenuItem text="Exit Application" onAction="#onExitClicked"/>
+            </Menu>
 
-            <Button text="Exit"
-                    onAction="#onExitClicked"
-                    styleClass="pacman-exit-button"/>
-        </VBox>
+            <Menu text="Help">
+                <MenuItem text="Help" onAction="#onHelpClicked"/>
+            </Menu>
 
-    </VBox>
+            <Menu text="About">
+                <MenuItem text="About" onAction="#onAboutClicked"/>
+            </Menu>
+        </MenuBar>
+    </top>
 
+    <center>
+        <StackPane fx:id="rootPane">
 
-    <!-- Setup Screen -->
-    <VBox fx:id="setupPane"
-          alignment="CENTER"
-          spacing="22.0"
-          styleClass="pacman-screen"
-          visible="false"
-          managed="false">
+            <!-- Start Screen -->
+            <VBox fx:id="startPane"
+                  alignment="CENTER"
+                  spacing="25.0"
+                  styleClass="pacman-screen">
 
-        <VBox alignment="CENTER" spacing="18.0" styleClass="menu-card">
-            <Label text="Maze Settings" styleClass="pacman-title-small"/>
-            <Label text="Choose maze size" styleClass="pacman-subtitle"/>
+                <VBox alignment="CENTER" spacing="15.0" styleClass="menu-card">
+                    <Label text="PAC-MAZE" styleClass="pacman-title"/>
+                    <Label text="Find your way out" styleClass="pacman-subtitle"/>
 
-            <VBox alignment="CENTER" spacing="15.0">
+                    <Button text="Start Game"
+                            onAction="#onStartGameClicked"
+                            styleClass="pacman-main-button"/>
 
-                <HBox alignment="CENTER" spacing="10.0">
-                    <Label text="Rows:" styleClass="form-label"/>
-                    <TextField fx:id="rowsTextField"
-                               text="20"
-                               prefWidth="110.0"
-                               styleClass="input-field"/>
-                </HBox>
-
-                <HBox alignment="CENTER" spacing="10.0">
-                    <Label text="Columns:" styleClass="form-label"/>
-                    <TextField fx:id="columnsTextField"
-                               text="20"
-                               prefWidth="110.0"
-                               styleClass="input-field"/>
-                </HBox>
+                    <Button text="Exit"
+                            onAction="#onExitClicked"
+                            styleClass="pacman-exit-button"/>
+                </VBox>
 
             </VBox>
 
-            <HBox alignment="CENTER" spacing="14.0">
-                <Button text="Generate Maze"
-                        onAction="#onGenerateMazeClicked"
-                        styleClass="pacman-main-button"/>
 
-                <Button text="Load Maze"
-                        onAction="#onLoadMazeClicked"
-                        styleClass="pacman-secondary-button"/>
+            <!-- Setup Screen -->
+            <VBox fx:id="setupPane"
+                  alignment="CENTER"
+                  spacing="22.0"
+                  styleClass="pacman-screen"
+                  visible="false"
+                  managed="false">
 
-                <Button text="Back"
-                        onAction="#onBackToStartClicked"
-                        styleClass="pacman-secondary-button"/>
+                <VBox alignment="CENTER" spacing="18.0" styleClass="menu-card">
+                    <Label text="Maze Settings" styleClass="pacman-title-small"/>
+                    <Label text="Choose maze size" styleClass="pacman-subtitle"/>
 
-                <Button text="Exit"
-                        onAction="#onExitClicked"
-                        styleClass="pacman-exit-button"/>
-            </HBox>
-        </VBox>
+                    <VBox alignment="CENTER" spacing="15.0">
 
-    </VBox>
+                        <HBox alignment="CENTER" spacing="10.0">
+                            <Label text="Rows:" styleClass="form-label"/>
+                            <Spinner fx:id="rowsSpinner"
+                                     editable="true"
+                                     prefWidth="130.0"
+                                     styleClass="dimension-spinner"/>
+                        </HBox>
 
+                        <HBox alignment="CENTER" spacing="10.0">
+                            <Label text="Columns:" styleClass="form-label"/>
+                            <Spinner fx:id="columnsSpinner"
+                                     editable="true"
+                                     prefWidth="130.0"
+                                     styleClass="dimension-spinner"/>
+                        </HBox>
 
-    <!-- Game Screen -->
-    <BorderPane fx:id="gamePane"
-                styleClass="game-screen"
-                visible="false"
-                managed="false">
+                    </VBox>
 
-        <top>
-            <VBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
-                <padding>
-                    <Insets top="15.0" bottom="10.0"/>
-                </padding>
+                    <HBox alignment="CENTER" spacing="14.0">
+                        <Button text="Generate Maze"
+                                onAction="#onGenerateMazeClicked"
+                                styleClass="pacman-main-button"/>
 
-                <Label text="PAC-MAZE" styleClass="game-title"/>
-                <Label fx:id="statusLabel"
-                       text=""
-                       visible="false"
-                       managed="false"
-                       styleClass="status-label"/>
+                        <Button text="Load Maze"
+                                onAction="#onLoadMazeClicked"
+                                styleClass="pacman-secondary-button"/>
 
-                <HBox alignment="CENTER" spacing="12.0">
-                    <Button text="Show Solution"
-                            onAction="#onShowSolutionClicked"
-                            styleClass="game-button"/>
+                        <Button text="Back"
+                                onAction="#onBackToStartClicked"
+                                styleClass="pacman-secondary-button"/>
 
-                    <Button text="Save Maze"
-                            onAction="#onSaveMazeClicked"
-                            styleClass="game-secondary-button"/>
+                        <Button text="Exit"
+                                onAction="#onExitClicked"
+                                styleClass="pacman-exit-button"/>
+                    </HBox>
+                </VBox>
 
-                    <Button text="New Maze"
-                            onAction="#onNewMazeClicked"
-                            styleClass="game-secondary-button"/>
-
-                    <Button text="Exit Game"
-                            onAction="#onExitGameClicked"
-                            styleClass="game-exit-button"/>
-                </HBox>
             </VBox>
-        </top>
 
-        <center>
-            <Pane fx:id="mazePane"
-                  prefWidth="620.0"
-                  prefHeight="520.0"
-                  maxWidth="620.0"
-                  maxHeight="520.0"
-                  styleClass="maze-pane"/>
-        </center>
 
-    </BorderPane>
+            <!-- Game Screen -->
+            <BorderPane fx:id="gamePane"
+                        styleClass="game-screen"
+                        visible="false"
+                        managed="false">
 
-</StackPane>
+                <top>
+                    <VBox alignment="CENTER" spacing="10.0" BorderPane.alignment="CENTER">
+                        <padding>
+                            <Insets top="15.0" bottom="10.0"/>
+                        </padding>
+
+                        <Label text="PAC-MAZE" styleClass="game-title"/>
+                        <Label fx:id="statusLabel"
+                               text=""
+                               visible="false"
+                               managed="false"
+                               styleClass="status-label"/>
+
+                        <HBox alignment="CENTER" spacing="12.0">
+                            <Button text="Show Solution"
+                                    onAction="#onShowSolutionClicked"
+                                    styleClass="game-button"/>
+
+                            <Button text="Save Maze"
+                                    onAction="#onSaveMazeClicked"
+                                    styleClass="game-secondary-button"/>
+
+                            <Button text="New Maze"
+                                    onAction="#onNewMazeClicked"
+                                    styleClass="game-secondary-button"/>
+
+                            <Button text="Exit Game"
+                                    onAction="#onExitGameClicked"
+                                    styleClass="game-exit-button"/>
+                        </HBox>
+                    </VBox>
+                </top>
+
+                <center>
+                    <Pane fx:id="mazePane"
+                          prefWidth="620.0"
+                          prefHeight="520.0"
+                          maxWidth="620.0"
+                          maxHeight="520.0"
+                          styleClass="maze-pane"/>
+                </center>
+
+            </BorderPane>
+
+        </StackPane>
+    </center>
+
+</BorderPane>

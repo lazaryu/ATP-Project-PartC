@@ -15,6 +15,8 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -27,11 +29,16 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Properties;
+import javafx.scene.control.TextArea;
 
 /**
  * MyViewController is the View layer controller.
@@ -51,10 +58,10 @@ public class MyViewController implements IView, Observer {
     private BorderPane gamePane;
 
     @FXML
-    private TextField rowsTextField;
+    private Spinner<Integer> rowsSpinner;
 
     @FXML
-    private TextField columnsTextField;
+    private Spinner<Integer> columnsSpinner;
 
     @FXML
     private Pane mazePane;
@@ -73,6 +80,8 @@ public class MyViewController implements IView, Observer {
     @FXML
     public void initialize() {
         mazeDisplayer = new MazeDisplayer();
+
+        initializeDimensionSpinners();
 
         mazeDisplayer.widthProperty().bind(mazePane.widthProperty());
         mazeDisplayer.heightProperty().bind(mazePane.heightProperty());
@@ -133,8 +142,11 @@ public class MyViewController implements IView, Observer {
         }
 
         try {
-            int rows = Integer.parseInt(rowsTextField.getText().trim());
-            int columns = Integer.parseInt(columnsTextField.getText().trim());
+            commitSpinnerValue(rowsSpinner);
+            commitSpinnerValue(columnsSpinner);
+
+            int rows = rowsSpinner.getValue();
+            int columns = columnsSpinner.getValue();
 
             if (rows < 3 || columns < 3) {
                 showErrorAlert("Invalid maze size", "Rows and columns must be at least 3.");
@@ -149,8 +161,8 @@ public class MyViewController implements IView, Observer {
             viewModel.generateMaze(rows, columns);
             requestMazeFocus();
 
-        } catch (NumberFormatException e) {
-            showErrorAlert("Invalid input", "Rows and columns must be numbers.");
+        } catch (Exception e) {
+            showErrorAlert("Invalid input", "Rows and columns must be valid numbers.");
         }
     }
 
@@ -918,6 +930,130 @@ public class MyViewController implements IView, Observer {
     }
 
     /**
+     * Handles Options -> Properties.
+     * Reads and displays the config.properties file in a smaller readable window.
+     */
+    @FXML
+    public void onPropertiesClicked() {
+        showPropertiesAlert(getPropertiesText());
+    }
+
+    /**
+     * Handles Help -> Help.
+     * Shows game instructions and board symbols.
+     */
+    @FXML
+    public void onHelpClicked() {
+        showInformationAlert(
+                "Help",
+                "Goal: move Pac-Man from the start point to the reward.\n\n" +
+                        "Movement keys:\n" +
+                        "8 / Up - move up\n" +
+                        "2 / Down - move down\n" +
+                        "4 / Left - move left\n" +
+                        "6 / Right - move right\n\n" +
+                        "Diagonal movement:\n" +
+                        "7 - up left\n" +
+                        "9 - up right\n" +
+                        "1 - down left\n" +
+                        "3 - down right\n\n" +
+                        "You can also move with the mouse over adjacent cells.\n\n" +
+                        "Green circle = start position.\n" +
+                        "Reward image = goal position.\n" +
+                        "Show Solution displays the solution path."
+        );
+    }
+
+    /**
+     * Handles About -> About.
+     * Shows information about the project.
+     */
+    @FXML
+    public void onAboutClicked() {
+        showInformationAlert(
+                "About",
+                "PAC-MAZE\n\n" +
+                        "JavaFX maze game using MVVM architecture.\n\n" +
+                        "Maze generation algorithm: MyMazeGenerator\n" +
+                        "Maze solving algorithm: BestFirstSearch\n\n" +
+                        "Created as part of the ATP Maze Project.\n\n" +
+                        "Developers: Shery and Yuval"
+        );
+    }
+
+    /**
+     * Handles closing the window with the X button.
+     * Uses the same clean exit flow as the Exit menu/button.
+     *
+     * @param event window close event
+     */
+    public void handleWindowClose(WindowEvent event) {
+        event.consume();
+        cleanExit();
+    }
+
+    /**
+     * Reads config.properties and formats it for display.
+     *
+     * @return formatted properties text
+     */
+    private String getPropertiesText() {
+        Properties properties = new Properties();
+
+        try (InputStream inputStream = openPropertiesInputStream()) {
+            if (inputStream == null) {
+                return "config.properties file was not found.\n\n" +
+                        "Expected location:\n" +
+                        "src/main/resources/config.properties";
+            }
+
+            properties.load(inputStream);
+
+            if (properties.isEmpty()) {
+                return "config.properties file is empty.";
+            }
+
+            StringBuilder builder = new StringBuilder();
+
+            for (String propertyName : properties.stringPropertyNames()) {
+                builder.append(propertyName)
+                        .append(" = ")
+                        .append(properties.getProperty(propertyName))
+                        .append("\n");
+            }
+
+            return builder.toString();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Could not read config.properties.";
+        }
+    }
+
+    /**
+     * Opens config.properties from resources.
+     * If it is not found there, tries to open it from the project root.
+     *
+     * @return input stream of the properties file, or null if not found
+     * @throws IOException if file access fails
+     */
+    private InputStream openPropertiesInputStream() throws IOException {
+        InputStream inputStream = getClass().getResourceAsStream("/config.properties");
+
+        if (inputStream != null) {
+            return inputStream;
+        }
+
+        File configFile = new File("config.properties");
+
+        if (configFile.exists()) {
+            return Files.newInputStream(configFile.toPath());
+        }
+
+        return null;
+    }
+
+    /**
      * Exits the application cleanly.
      */
     private void cleanExit() {
@@ -937,4 +1073,153 @@ public class MyViewController implements IView, Observer {
             System.exit(0);
         }
     }
+
+    /**
+     * Shows the properties file in a Pac-Man styled alert with smaller text.
+     *
+     * @param propertiesText formatted properties text
+     */
+    private void showPropertiesAlert(String propertiesText) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Properties");
+        alert.setHeaderText(null);
+        alert.setContentText(null);
+        alert.setGraphic(null);
+
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.getButtonTypes().setAll(ButtonType.OK);
+
+        dialogPane.setStyle(
+                "-fx-background-color: #000000;" +
+                        "-fx-border-color: #FFD700;" +
+                        "-fx-border-width: 4;" +
+                        "-fx-border-radius: 18;" +
+                        "-fx-background-radius: 18;"
+        );
+
+        Label titleLabel = new Label("PROPERTIES");
+        titleLabel.setFont(Font.font("Arial", FontWeight.EXTRA_BOLD, 30));
+        titleLabel.setTextFill(Color.web("#FFD700"));
+        titleLabel.setAlignment(Pos.CENTER);
+        titleLabel.setEffect(new DropShadow(14, Color.web("#FFD700")));
+
+        TextArea propertiesTextArea = new TextArea(propertiesText);
+        propertiesTextArea.setEditable(false);
+        propertiesTextArea.setWrapText(true);
+        propertiesTextArea.setPrefWidth(520);
+        propertiesTextArea.setPrefHeight(170);
+        propertiesTextArea.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        propertiesTextArea.setStyle(
+                "-fx-control-inner-background: #000000;" +
+                        "-fx-background-color: #000000;" +
+                        "-fx-text-fill: #FFD700;" +
+                        "-fx-highlight-fill: #FFD700;" +
+                        "-fx-highlight-text-fill: #000000;" +
+                        "-fx-border-color: #FFD700;" +
+                        "-fx-border-width: 2;" +
+                        "-fx-border-radius: 10;" +
+                        "-fx-background-radius: 10;"
+        );
+
+        VBox contentBox = new VBox(18);
+        contentBox.setAlignment(Pos.CENTER);
+        contentBox.setPadding(new Insets(25, 35, 20, 35));
+        contentBox.setStyle(
+                "-fx-background-color: #000000;" +
+                        "-fx-background-radius: 18;"
+        );
+
+        contentBox.getChildren().addAll(titleLabel, propertiesTextArea);
+
+        dialogPane.setContent(contentBox);
+        dialogPane.setMinWidth(600);
+        dialogPane.setMinHeight(300);
+
+        styleAlertButtons(alert, false);
+
+        alert.showAndWait();
+    }
+
+    /**
+     * Initializes rows and columns spinners.
+     * Allows changing maze dimensions with arrows,
+     * typing values manually, and pressing Enter.
+     */
+    private void initializeDimensionSpinners() {
+        if (rowsSpinner == null || columnsSpinner == null) {
+            return;
+        }
+
+        SpinnerValueFactory<Integer> rowsFactory =
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(3, 100, 20);
+
+        SpinnerValueFactory<Integer> columnsFactory =
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(3, 100, 20);
+
+        rowsSpinner.setValueFactory(rowsFactory);
+        columnsSpinner.setValueFactory(columnsFactory);
+
+        rowsSpinner.setEditable(true);
+        columnsSpinner.setEditable(true);
+
+        rowsSpinner.getEditor().setStyle(getSpinnerEditorStyle());
+        columnsSpinner.getEditor().setStyle(getSpinnerEditorStyle());
+
+        rowsSpinner.getEditor().setOnAction(event -> {
+            commitSpinnerValue(rowsSpinner);
+            columnsSpinner.requestFocus();
+            columnsSpinner.getEditor().selectAll();
+        });
+
+        columnsSpinner.getEditor().setOnAction(event -> {
+            commitSpinnerValue(columnsSpinner);
+            onGenerateMazeClicked();
+        });
+    }
+
+    /**
+     * Commits manually typed text inside a Spinner editor.
+     *
+     * @param spinner spinner to commit
+     */
+    private void commitSpinnerValue(Spinner<Integer> spinner) {
+        try {
+            String text = spinner.getEditor().getText().trim();
+            int value = Integer.parseInt(text);
+
+            int minValue = 3;
+            int maxValue = 100;
+
+            if (value < minValue) {
+                value = minValue;
+            }
+
+            if (value > maxValue) {
+                value = maxValue;
+            }
+
+            spinner.getValueFactory().setValue(value);
+            spinner.getEditor().setText(String.valueOf(value));
+
+        } catch (NumberFormatException e) {
+            spinner.getEditor().setText(String.valueOf(spinner.getValue()));
+        }
+    }
+
+    /**
+     * Returns the visual style for the spinner text editor.
+     *
+     * @return CSS string
+     */
+    private String getSpinnerEditorStyle() {
+        return "-fx-background-color: white;" +
+                "-fx-text-fill: #222222;" +
+                "-fx-font-size: 22px;" +
+                "-fx-font-weight: bold;" +
+                "-fx-border-color: #FFD700;" +
+                "-fx-border-width: 3;" +
+                "-fx-border-radius: 12;" +
+                "-fx-background-radius: 12;";
+    }
 }
+

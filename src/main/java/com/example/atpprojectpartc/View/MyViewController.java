@@ -1,5 +1,4 @@
 package com.example.atpprojectpartc.View;
-
 import com.example.atpprojectpartc.ViewModel.MyViewModel;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -14,13 +13,14 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextArea;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -30,6 +30,8 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +40,6 @@ import java.nio.file.Files;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Properties;
-import javafx.scene.control.TextArea;
 
 /**
  * MyViewController is the View layer controller.
@@ -47,6 +48,12 @@ import javafx.scene.control.TextArea;
  */
 @SuppressWarnings("deprecation")
 public class MyViewController implements IView, Observer {
+
+    private static final Logger logger = LogManager.getLogger(MyViewController.class);
+
+    private static final double MIN_MAZE_ZOOM_SCALE = 0.6;
+    private static final double MAX_MAZE_ZOOM_SCALE = 2.5;
+    private static final double MAZE_ZOOM_STEP = 0.1;
 
     @FXML
     private VBox startPane;
@@ -72,6 +79,8 @@ public class MyViewController implements IView, Observer {
     private MazeDisplayer mazeDisplayer;
     private MyViewModel viewModel;
 
+    private double mazeZoomScale = 1.0;
+
     private final SoundManager soundManager = new SoundManager();
 
     /**
@@ -79,6 +88,8 @@ public class MyViewController implements IView, Observer {
      */
     @FXML
     public void initialize() {
+        logger.info("Initializing MyViewController.");
+
         mazeDisplayer = new MazeDisplayer();
 
         initializeDimensionSpinners();
@@ -95,11 +106,16 @@ public class MyViewController implements IView, Observer {
         mazePane.setOnMouseMoved(this::mouseMoved);
         mazePane.setOnMouseDragged(this::mouseMoved);
 
+        mazeDisplayer.setOnScroll(this::handleMazeZoom);
+        mazePane.setOnScroll(this::handleMazeZoom);
+
         mazePane.widthProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
         mazePane.heightProperty().addListener((observable, oldValue, newValue) -> redrawMaze());
 
         showStartScreen();
         soundManager.playIntroMusic();
+
+        logger.info("MyViewController initialized successfully.");
     }
 
     /**
@@ -109,25 +125,27 @@ public class MyViewController implements IView, Observer {
      */
     @Override
     public void setViewModel(MyViewModel viewModel) {
+        logger.info("Connecting MyViewController to MyViewModel.");
+
         this.viewModel = viewModel;
         this.viewModel.addObserver(this);
     }
 
     /**
      * Handles click on Start Game.
-     * The intro music continues while the user chooses maze dimensions.
      */
     @FXML
     public void onStartGameClicked() {
+        logger.info("User clicked Start Game.");
         showSetupScreen();
     }
 
     /**
      * Handles click on Back from the setup screen.
-     * The intro music continues playing.
      */
     @FXML
     public void onBackToStartClicked() {
+        logger.info("User clicked Back to start screen.");
         showStartScreen();
     }
 
@@ -136,7 +154,10 @@ public class MyViewController implements IView, Observer {
      */
     @FXML
     public void onGenerateMazeClicked() {
+        logger.info("User clicked Generate Maze.");
+
         if (viewModel == null) {
+            logger.error("Cannot generate maze because ViewModel is not connected.");
             displayMessage("ViewModel is not connected.");
             return;
         }
@@ -148,12 +169,16 @@ public class MyViewController implements IView, Observer {
             int rows = rowsSpinner.getValue();
             int columns = columnsSpinner.getValue();
 
+            logger.info("User requested maze generation. rows={}, columns={}", rows, columns);
+
             if (rows < 3 || columns < 3) {
+                logger.warn("Invalid maze size. rows={}, columns={}", rows, columns);
                 showErrorAlert("Invalid maze size", "Rows and columns must be at least 3.");
                 return;
             }
 
             if (rows > 100 || columns > 100) {
+                logger.warn("Maze size too large. rows={}, columns={}", rows, columns);
                 showErrorAlert("Invalid maze size", "Rows and columns must be 100 or less.");
                 return;
             }
@@ -162,17 +187,20 @@ public class MyViewController implements IView, Observer {
             requestMazeFocus();
 
         } catch (Exception e) {
+            logger.warn("Invalid maze input from spinners.", e);
             showErrorAlert("Invalid input", "Rows and columns must be valid numbers.");
         }
     }
 
     /**
      * Handles click on Load Maze.
-     * Loads a maze from a .maze file and opens the game screen.
      */
     @FXML
     public void onLoadMazeClicked() {
+        logger.info("User clicked Load Maze.");
+
         if (viewModel == null) {
+            logger.error("Cannot load maze because ViewModel is not connected.");
             displayMessage("ViewModel is not connected.");
             return;
         }
@@ -186,27 +214,35 @@ public class MyViewController implements IView, Observer {
         File selectedFile = fileChooser.showOpenDialog(getCurrentWindow());
 
         if (selectedFile == null) {
+            logger.info("Load maze cancelled by user.");
             return;
         }
 
+        logger.info("User selected maze file to load: {}", selectedFile.getAbsolutePath());
+
         try {
             viewModel.loadMaze(selectedFile);
+            logger.info("Maze load request completed successfully.");
+
         } catch (IOException e) {
+            logger.error("Could not load maze file: {}", selectedFile.getAbsolutePath(), e);
             showErrorAlert("Load Error", "Could not load the maze file.");
-            e.printStackTrace();
+
         } catch (Exception e) {
+            logger.error("Selected file is not a valid maze file: {}", selectedFile.getAbsolutePath(), e);
             showErrorAlert("Load Error", "The selected file is not a valid maze file.");
-            e.printStackTrace();
         }
     }
 
     /**
      * Handles click on Save Maze.
-     * Saves the current maze to a .maze file.
      */
     @FXML
     public void onSaveMazeClicked() {
+        logger.info("User clicked Save Maze.");
+
         if (viewModel == null || viewModel.getMaze() == null) {
+            logger.warn("Save maze failed because there is no maze to save.");
             showErrorAlert("No maze", "There is no maze to save.");
             return;
         }
@@ -221,21 +257,27 @@ public class MyViewController implements IView, Observer {
         File selectedFile = fileChooser.showSaveDialog(getCurrentWindow());
 
         if (selectedFile == null) {
+            logger.info("Save maze cancelled by user.");
             requestMazeFocus();
             return;
         }
 
         File fileToSave = ensureMazeExtension(selectedFile);
 
+        logger.info("User selected maze file to save: {}", fileToSave.getAbsolutePath());
+
         try {
             viewModel.saveMaze(fileToSave);
+            logger.info("Maze saved successfully to: {}", fileToSave.getAbsolutePath());
             showInformationAlert("Maze Saved", "The maze was saved successfully.");
+
         } catch (IOException e) {
+            logger.error("Could not save maze file: {}", fileToSave.getAbsolutePath(), e);
             showErrorAlert("Save Error", "Could not save the maze file.");
-            e.printStackTrace();
+
         } catch (Exception e) {
+            logger.error("Unexpected error while saving maze to: {}", fileToSave.getAbsolutePath(), e);
             showErrorAlert("Save Error", e.getMessage());
-            e.printStackTrace();
         }
 
         requestMazeFocus();
@@ -246,7 +288,10 @@ public class MyViewController implements IView, Observer {
      */
     @FXML
     public void onShowSolutionClicked() {
+        logger.info("User clicked Show Solution.");
+
         if (viewModel == null || viewModel.getMaze() == null) {
+            logger.warn("Cannot show solution because no maze exists.");
             showErrorAlert("No maze", "Please generate or load a maze first.");
             return;
         }
@@ -257,29 +302,32 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles click on New Maze.
-     * Returns to the setup screen and starts the intro music again.
      */
     @FXML
     public void onNewMazeClicked() {
+        logger.info("User clicked New Maze.");
         showSetupScreen();
         soundManager.playIntroMusic();
     }
 
     /**
      * Handles click on Exit Game from the maze screen.
-     * Plays the loss sound and then returns to the intro music.
      */
     @FXML
     public void onExitGameClicked() {
+        logger.info("User clicked Exit Game.");
+
         boolean shouldExit = showConfirmationAlert(
                 "Exit Game",
                 "Are you sure you want to leave the current maze?"
         );
 
         if (shouldExit) {
+            logger.info("User confirmed exit from current game.");
             showStartScreen();
             soundManager.playLossThenIntroMusic();
         } else {
+            logger.info("User cancelled exit from current game.");
             requestMazeFocus();
         }
     }
@@ -289,6 +337,7 @@ public class MyViewController implements IView, Observer {
      */
     @FXML
     public void onExitClicked() {
+        logger.info("User clicked Exit.");
         cleanExit();
     }
 
@@ -333,6 +382,7 @@ public class MyViewController implements IView, Observer {
             }
         }
 
+        logger.debug("Movement key pressed: {}", code);
         requestMazeFocus();
     }
 
@@ -380,10 +430,77 @@ public class MyViewController implements IView, Observer {
         int columnDifference = mouseColumn - playerColumn;
 
         if (isAdjacentCell(rowDifference, columnDifference)) {
+            logger.debug(
+                    "Mouse movement requested player move. rowDifference={}, columnDifference={}",
+                    rowDifference,
+                    columnDifference
+            );
+
             viewModel.moveByDelta(rowDifference, columnDifference);
         }
 
         requestMazeFocus();
+    }
+
+    /**
+     * Handles Ctrl + mouse wheel zoom on the maze.
+     *
+     * @param scrollEvent mouse scroll event
+     */
+    private void handleMazeZoom(ScrollEvent scrollEvent) {
+        if (mazeDisplayer == null) {
+            return;
+        }
+
+        if (!scrollEvent.isControlDown()) {
+            return;
+        }
+
+        double previousZoomScale = mazeZoomScale;
+
+        if (scrollEvent.getDeltaY() > 0) {
+            mazeZoomScale += MAZE_ZOOM_STEP;
+        } else if (scrollEvent.getDeltaY() < 0) {
+            mazeZoomScale -= MAZE_ZOOM_STEP;
+        }
+
+        mazeZoomScale = Math.max(
+                MIN_MAZE_ZOOM_SCALE,
+                Math.min(MAX_MAZE_ZOOM_SCALE, mazeZoomScale)
+        );
+
+        applyMazeZoom();
+
+        logger.info(
+                "Maze zoom changed. previousZoom={}, newZoom={}",
+                previousZoomScale,
+                mazeZoomScale
+        );
+
+        scrollEvent.consume();
+        requestMazeFocus();
+    }
+
+    /**
+     * Applies the current zoom scale to the maze canvas.
+     */
+    private void applyMazeZoom() {
+        if (mazeDisplayer == null) {
+            return;
+        }
+
+        mazeDisplayer.setScaleX(mazeZoomScale);
+        mazeDisplayer.setScaleY(mazeZoomScale);
+    }
+
+    /**
+     * Resets the maze zoom to the default size.
+     */
+    private void resetMazeZoom() {
+        mazeZoomScale = 1.0;
+        applyMazeZoom();
+
+        logger.debug("Maze zoom was reset to default.");
     }
 
     /**
@@ -411,17 +528,22 @@ public class MyViewController implements IView, Observer {
     public void update(Observable observable, Object arg) {
         Platform.runLater(() -> {
             if (arg == null) {
+                logger.warn("Received null update from ViewModel.");
                 return;
             }
 
             String updateMessage = arg.toString();
+
+            logger.debug("Received update from ViewModel: {}", updateMessage);
 
             switch (updateMessage) {
                 case "mazeGenerated" -> handleMazeGenerated();
                 case "playerMoved" -> handlePlayerMoved();
                 case "gameWon" -> handleGameWon();
                 case "solutionReady" -> handleSolutionReady();
-                default -> System.out.println("Unknown update: " + updateMessage);
+                case "mazeGenerationFailed" -> showErrorAlert("Maze Error", "Could not generate the maze.");
+                case "solutionFailed" -> showErrorAlert("Solution Error", "Could not solve the maze.");
+                default -> logger.warn("Unknown update received from ViewModel: {}", updateMessage);
             }
         });
     }
@@ -431,8 +553,11 @@ public class MyViewController implements IView, Observer {
      */
     private void handleMazeGenerated() {
         if (mazeDisplayer == null) {
+            logger.error("Cannot display generated maze because MazeDisplayer is null.");
             return;
         }
+
+        logger.info("Displaying generated or loaded maze.");
 
         mazeDisplayer.setMaze(
                 viewModel.getMaze(),
@@ -440,9 +565,10 @@ public class MyViewController implements IView, Observer {
                 viewModel.getPlayerColumn()
         );
 
+        resetMazeZoom();
+
         soundManager.playGameMusic();
 
-        //setStatusText("Move with arrows, NumPad 8/2/4/6/7/9/1/3, or move the mouse over adjacent cells.");
         showGameScreen();
         requestMazeFocus();
     }
@@ -452,6 +578,7 @@ public class MyViewController implements IView, Observer {
      */
     private void handlePlayerMoved() {
         if (mazeDisplayer == null) {
+            logger.error("Cannot update player position because MazeDisplayer is null.");
             return;
         }
 
@@ -466,8 +593,11 @@ public class MyViewController implements IView, Observer {
      */
     private void handleSolutionReady() {
         if (mazeDisplayer == null || viewModel == null || viewModel.getSolution() == null) {
+            logger.warn("Cannot display solution because one of the required objects is null.");
             return;
         }
+
+        logger.info("Displaying solution path on maze.");
 
         mazeDisplayer.setSolution(viewModel.getSolution());
         setStatusText("Solution path is displayed.");
@@ -476,12 +606,14 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles winning the game.
-     * Stops the Pacman music and plays the victory music.
      */
     private void handleGameWon() {
         if (mazeDisplayer == null) {
+            logger.error("Cannot handle game won because MazeDisplayer is null.");
             return;
         }
+
+        logger.info("Game won by user.");
 
         mazeDisplayer.updatePlayerPosition(
                 viewModel.getPlayerRow(),
@@ -500,6 +632,7 @@ public class MyViewController implements IView, Observer {
      * @param scene main scene
      */
     public void setSceneEvents(Scene scene) {
+        logger.info("Keyboard events connected to scene.");
         scene.setOnKeyPressed(this::keyPressed);
     }
 
@@ -517,6 +650,8 @@ public class MyViewController implements IView, Observer {
             if (viewModel.getSolution() != null) {
                 mazeDisplayer.setSolution(viewModel.getSolution());
             }
+
+            applyMazeZoom();
         }
     }
 
@@ -550,6 +685,7 @@ public class MyViewController implements IView, Observer {
      * Shows the start screen.
      */
     private void showStartScreen() {
+        logger.debug("Showing start screen.");
         setPaneVisible(startPane, true);
         setPaneVisible(setupPane, false);
         setPaneVisible(gamePane, false);
@@ -559,6 +695,7 @@ public class MyViewController implements IView, Observer {
      * Shows the setup screen.
      */
     private void showSetupScreen() {
+        logger.debug("Showing setup screen.");
         setPaneVisible(startPane, false);
         setPaneVisible(setupPane, true);
         setPaneVisible(gamePane, false);
@@ -568,6 +705,7 @@ public class MyViewController implements IView, Observer {
      * Shows the game screen.
      */
     private void showGameScreen() {
+        logger.debug("Showing game screen.");
         setPaneVisible(startPane, false);
         setPaneVisible(setupPane, false);
         setPaneVisible(gamePane, true);
@@ -596,7 +734,9 @@ public class MyViewController implements IView, Observer {
         String filePath = file.getAbsolutePath();
 
         if (!filePath.toLowerCase().endsWith(".maze")) {
-            return new File(filePath + ".maze");
+            File fileWithExtension = new File(filePath + ".maze");
+            logger.debug("Added .maze extension. original={}, updated={}", filePath, fileWithExtension.getAbsolutePath());
+            return fileWithExtension;
         }
 
         return file;
@@ -620,6 +760,7 @@ public class MyViewController implements IView, Observer {
             return startPane.getScene().getWindow();
         }
 
+        logger.warn("Could not find current application window.");
         return null;
     }
 
@@ -630,6 +771,7 @@ public class MyViewController implements IView, Observer {
      */
     @Override
     public void displayMessage(String message) {
+        logger.info("Displaying message to user: {}", message);
         showInformationAlert("Maze Game", message);
     }
 
@@ -640,6 +782,8 @@ public class MyViewController implements IView, Observer {
      * @param content alert content
      */
     private void showErrorAlert(String title, String content) {
+        logger.warn("Showing error alert. title={}, content={}", title, content);
+
         Alert alert = createPacmanAlert(Alert.AlertType.ERROR, title, content);
 
         alert.getButtonTypes().setAll(ButtonType.OK);
@@ -656,6 +800,8 @@ public class MyViewController implements IView, Observer {
      * @param content alert content
      */
     private void showInformationAlert(String title, String content) {
+        logger.info("Showing information alert. title={}, content={}", title, content);
+
         Alert alert = createPacmanAlert(Alert.AlertType.INFORMATION, title, content);
 
         alert.getButtonTypes().setAll(ButtonType.OK);
@@ -673,6 +819,8 @@ public class MyViewController implements IView, Observer {
      * @return true if the user clicked OK
      */
     private boolean showConfirmationAlert(String title, String content) {
+        logger.info("Showing confirmation alert. title={}, content={}", title, content);
+
         Alert alert = createPacmanAlert(Alert.AlertType.CONFIRMATION, title, content);
 
         ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
@@ -682,9 +830,13 @@ public class MyViewController implements IView, Observer {
 
         styleAlertButtons(alert, true);
 
-        return alert.showAndWait()
+        boolean confirmed = alert.showAndWait()
                 .filter(buttonType -> buttonType == okButtonType)
                 .isPresent();
+
+        logger.info("Confirmation alert result. title={}, confirmed={}", title, confirmed);
+
+        return confirmed;
     }
 
     /**
@@ -880,6 +1032,8 @@ public class MyViewController implements IView, Observer {
      * Shows a custom Pac-Man styled victory dialog.
      */
     private void showPacmanVictoryDialog() {
+        logger.info("Showing Pac-Man victory dialog.");
+
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Victory");
 
@@ -931,19 +1085,20 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles Options -> Properties.
-     * Reads and displays the config.properties file in a smaller readable window.
      */
     @FXML
     public void onPropertiesClicked() {
+        logger.info("User clicked Properties.");
         showPropertiesAlert(getPropertiesText());
     }
 
     /**
      * Handles Help -> Help.
-     * Shows game instructions and board symbols.
      */
     @FXML
     public void onHelpClicked() {
+        logger.info("User clicked Help.");
+
         showInformationAlert(
                 "Help",
                 "Goal: move Pac-Man from the start point to the reward.\n\n" +
@@ -958,6 +1113,8 @@ public class MyViewController implements IView, Observer {
                         "1 - down left\n" +
                         "3 - down right\n\n" +
                         "You can also move with the mouse over adjacent cells.\n\n" +
+                        "Zoom:\n" +
+                        "Hold Ctrl and use the mouse wheel over the maze.\n\n" +
                         "Green circle = start position.\n" +
                         "Reward image = goal position.\n" +
                         "Show Solution displays the solution path."
@@ -966,16 +1123,17 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles About -> About.
-     * Shows information about the project.
      */
     @FXML
     public void onAboutClicked() {
+        logger.info("User clicked About.");
+
         showInformationAlert(
                 "About",
                 "PAC-MAZE\n\n" +
                         "JavaFX maze game using MVVM architecture.\n\n" +
-                        "Maze generation algorithm: MyMazeGenerator\n" +
-                        "Maze solving algorithm: BestFirstSearch\n\n" +
+                        "Maze generation algorithm: MyMazeGenerator through Part B server\n" +
+                        "Maze solving algorithm: BestFirstSearch through Part B server\n\n" +
                         "Created as part of the ATP Maze Project.\n\n" +
                         "Developers: Shery and Yuval"
         );
@@ -983,11 +1141,9 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Handles closing the window with the X button.
-     * Uses the same clean exit flow as the Exit menu/button.
-     *
-     * @param event window close event
      */
     public void handleWindowClose(WindowEvent event) {
+        logger.info("User clicked window close button.");
         event.consume();
         cleanExit();
     }
@@ -1000,8 +1156,12 @@ public class MyViewController implements IView, Observer {
     private String getPropertiesText() {
         Properties properties = new Properties();
 
+        logger.info("Reading config.properties.");
+
         try (InputStream inputStream = openPropertiesInputStream()) {
             if (inputStream == null) {
+                logger.warn("config.properties file was not found.");
+
                 return "config.properties file was not found.\n\n" +
                         "Expected location:\n" +
                         "src/main/resources/config.properties";
@@ -1010,6 +1170,7 @@ public class MyViewController implements IView, Observer {
             properties.load(inputStream);
 
             if (properties.isEmpty()) {
+                logger.warn("config.properties file is empty.");
                 return "config.properties file is empty.";
             }
 
@@ -1022,17 +1183,18 @@ public class MyViewController implements IView, Observer {
                         .append("\n");
             }
 
+            logger.info("config.properties loaded successfully. numberOfProperties={}", properties.size());
+
             return builder.toString();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Could not read config.properties.", e);
             return "Could not read config.properties.";
         }
     }
 
     /**
      * Opens config.properties from resources.
-     * If it is not found there, tries to open it from the project root.
      *
      * @return input stream of the properties file, or null if not found
      * @throws IOException if file access fails
@@ -1041,12 +1203,14 @@ public class MyViewController implements IView, Observer {
         InputStream inputStream = getClass().getResourceAsStream("/config.properties");
 
         if (inputStream != null) {
+            logger.debug("config.properties loaded from resources.");
             return inputStream;
         }
 
         File configFile = new File("config.properties");
 
         if (configFile.exists()) {
+            logger.debug("config.properties loaded from project root.");
             return Files.newInputStream(configFile.toPath());
         }
 
@@ -1057,12 +1221,16 @@ public class MyViewController implements IView, Observer {
      * Exits the application cleanly.
      */
     private void cleanExit() {
+        logger.info("Starting clean exit flow.");
+
         boolean shouldExit = showConfirmationAlert(
                 "Exit",
                 "Are you sure you want to exit PAC-MAZE?"
         );
 
         if (shouldExit) {
+            logger.info("User confirmed application exit.");
+
             soundManager.stopAllMusic();
 
             if (viewModel != null) {
@@ -1071,6 +1239,8 @@ public class MyViewController implements IView, Observer {
 
             Platform.exit();
             System.exit(0);
+        } else {
+            logger.info("User cancelled application exit.");
         }
     }
 
@@ -1080,6 +1250,8 @@ public class MyViewController implements IView, Observer {
      * @param propertiesText formatted properties text
      */
     private void showPropertiesAlert(String propertiesText) {
+        logger.info("Showing Properties dialog.");
+
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Properties");
         alert.setHeaderText(null);
@@ -1142,11 +1314,10 @@ public class MyViewController implements IView, Observer {
 
     /**
      * Initializes rows and columns spinners.
-     * Allows changing maze dimensions with arrows,
-     * typing values manually, and pressing Enter.
      */
     private void initializeDimensionSpinners() {
         if (rowsSpinner == null || columnsSpinner == null) {
+            logger.warn("Cannot initialize dimension spinners because one of them is null.");
             return;
         }
 
@@ -1175,6 +1346,8 @@ public class MyViewController implements IView, Observer {
             commitSpinnerValue(columnsSpinner);
             onGenerateMazeClicked();
         });
+
+        logger.info("Dimension spinners initialized successfully.");
     }
 
     /**
@@ -1191,10 +1364,12 @@ public class MyViewController implements IView, Observer {
             int maxValue = 100;
 
             if (value < minValue) {
+                logger.debug("Spinner value was below minimum. value={}, min={}", value, minValue);
                 value = minValue;
             }
 
             if (value > maxValue) {
+                logger.debug("Spinner value was above maximum. value={}, max={}", value, maxValue);
                 value = maxValue;
             }
 
@@ -1202,6 +1377,7 @@ public class MyViewController implements IView, Observer {
             spinner.getEditor().setText(String.valueOf(value));
 
         } catch (NumberFormatException e) {
+            logger.warn("Invalid spinner input '{}'. Restoring previous value.", spinner.getEditor().getText());
             spinner.getEditor().setText(String.valueOf(spinner.getValue()));
         }
     }
@@ -1222,4 +1398,3 @@ public class MyViewController implements IView, Observer {
                 "-fx-background-radius: 12;";
     }
 }
-

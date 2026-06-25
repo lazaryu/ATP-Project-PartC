@@ -168,8 +168,6 @@
                     <Pane fx:id="mazePane"
                           prefWidth="620.0"
                           prefHeight="520.0"
-                          maxWidth="620.0"
-                          maxHeight="520.0"
                           styleClass="maze-pane"/>
                 </center>
 

@@ -1,4 +1,3 @@
-```gitignore
 ### Build output ###
 target/
 out/
@@ -56,4 +55,3 @@ Thumbs.db
 
 ### Keep project libraries ###
 # Do not ignore lib because ATPProjectJAR.jar is required for Part C
-```

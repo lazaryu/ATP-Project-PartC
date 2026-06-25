@@ -14,10 +14,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <!-- JavaFX 17, patch version -->
+        <!-- JavaFX 17, approved by the course staff -->
         <javafx.version>17.0.16</javafx.version>
 
+        <!-- JUnit version -->
         <junit.version>5.10.2</junit.version>
+
+        <!-- Log4j2 version -->
+        <log4j2.version>2.23.1</log4j2.version>
     </properties>
 
     <dependencies>
@@ -40,6 +44,20 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-media</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- Log4j2 API -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <!-- Log4j2 Core -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
 
         <!-- JAR from previous project parts -->

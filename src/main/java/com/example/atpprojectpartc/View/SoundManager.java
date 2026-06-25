@@ -1,9 +1,10 @@
 package com.example.atpprojectpartc.View;
-
 import javafx.animation.PauseTransition;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URL;
 
@@ -17,6 +18,8 @@ import java.net.URL;
  * 4. Loss music - Pacman loss sound, played when exiting the maze.
  */
 public class SoundManager {
+
+    private static final Logger logger = LogManager.getLogger(SoundManager.class);
 
     private MediaPlayer introMusicPlayer;
     private MediaPlayer gameMusicPlayer;
@@ -67,6 +70,8 @@ public class SoundManager {
      * This music plays on the start/setup screens.
      */
     public void playIntroMusic() {
+        logger.info("Starting intro music.");
+
         stopGameMusic();
         stopVictoryMusic();
         stopLossMusic();
@@ -76,6 +81,7 @@ public class SoundManager {
         introMusicPlayer = createMediaPlayer(INTRO_MUSIC_PATH);
 
         if (introMusicPlayer == null) {
+            logger.warn("Intro music could not be started because MediaPlayer is null.");
             return;
         }
 
@@ -83,6 +89,8 @@ public class SoundManager {
         introMusicPlayer.setVolume(0.35);
 
         playFromSecond(introMusicPlayer, INTRO_START_SECONDS);
+
+        logger.info("Intro music started in loop from second {}.", INTRO_START_SECONDS);
     }
 
     /**
@@ -90,6 +98,7 @@ public class SoundManager {
      */
     public void stopIntroMusic() {
         if (introMusicPlayer != null) {
+            logger.debug("Stopping intro music.");
             introMusicPlayer.stop();
         }
     }
@@ -99,6 +108,7 @@ public class SoundManager {
      */
     private void stopAndDisposeIntroMusic() {
         if (introMusicPlayer != null) {
+            logger.debug("Stopping and disposing intro music.");
             introMusicPlayer.stop();
             introMusicPlayer.dispose();
             introMusicPlayer = null;
@@ -110,6 +120,8 @@ public class SoundManager {
      * This music starts only when the maze screen opens.
      */
     public void playGameMusic() {
+        logger.info("Starting game music.");
+
         stopIntroMusic();
         stopVictoryMusic();
         stopLossMusic();
@@ -119,6 +131,7 @@ public class SoundManager {
         gameMusicPlayer = createMediaPlayer(GAME_MUSIC_PATH);
 
         if (gameMusicPlayer == null) {
+            logger.warn("Game music could not be started because MediaPlayer is null.");
             return;
         }
 
@@ -126,6 +139,8 @@ public class SoundManager {
         gameMusicPlayer.setVolume(0.35);
 
         playFromSecond(gameMusicPlayer, GAME_START_SECONDS);
+
+        logger.info("Game music started in loop from second {}.", GAME_START_SECONDS);
     }
 
     /**
@@ -133,6 +148,7 @@ public class SoundManager {
      */
     public void stopGameMusic() {
         if (gameMusicPlayer != null) {
+            logger.debug("Stopping game music.");
             gameMusicPlayer.stop();
         }
     }
@@ -142,6 +158,7 @@ public class SoundManager {
      */
     private void stopAndDisposeGameMusic() {
         if (gameMusicPlayer != null) {
+            logger.debug("Stopping and disposing game music.");
             gameMusicPlayer.stop();
             gameMusicPlayer.dispose();
             gameMusicPlayer = null;
@@ -152,6 +169,8 @@ public class SoundManager {
      * Plays the victory music from second 70.
      */
     public void playVictoryMusic() {
+        logger.info("Starting victory music.");
+
         stopIntroMusic();
         stopGameMusic();
         stopLossMusic();
@@ -161,6 +180,7 @@ public class SoundManager {
         victoryMusicPlayer = createMediaPlayer(VICTORY_MUSIC_PATH);
 
         if (victoryMusicPlayer == null) {
+            logger.warn("Victory music could not be started because MediaPlayer is null.");
             return;
         }
 
@@ -168,6 +188,8 @@ public class SoundManager {
         victoryMusicPlayer.setVolume(0.65);
 
         playFromSecond(victoryMusicPlayer, VICTORY_START_SECONDS);
+
+        logger.info("Victory music started from second {}.", VICTORY_START_SECONDS);
     }
 
     /**
@@ -175,6 +197,7 @@ public class SoundManager {
      */
     public void stopVictoryMusic() {
         if (victoryMusicPlayer != null) {
+            logger.debug("Stopping and disposing victory music.");
             victoryMusicPlayer.stop();
             victoryMusicPlayer.dispose();
             victoryMusicPlayer = null;
@@ -186,6 +209,8 @@ public class SoundManager {
      * and after that starts the intro music again.
      */
     public void playLossThenIntroMusic() {
+        logger.info("Starting loss sound and then intro music.");
+
         stopIntroMusic();
         stopGameMusic();
         stopVictoryMusic();
@@ -194,6 +219,7 @@ public class SoundManager {
         lossMusicPlayer = createMediaPlayer(LOSS_MUSIC_PATH);
 
         if (lossMusicPlayer == null) {
+            logger.warn("Loss sound could not be started. Returning to intro music.");
             playIntroMusic();
             return;
         }
@@ -205,14 +231,22 @@ public class SoundManager {
         Duration lossDuration = Duration.seconds(LOSS_END_SECONDS - LOSS_START_SECONDS);
 
         lossMusicPlayer.setOnReady(() -> {
+            logger.info(
+                    "Loss sound is ready. Playing from second {} to second {}.",
+                    LOSS_START_SECONDS,
+                    LOSS_END_SECONDS
+            );
+
             lossMusicPlayer.seek(startTime);
             lossMusicPlayer.play();
 
             lossTimer = new PauseTransition(lossDuration);
             lossTimer.setOnFinished(event -> {
+                logger.info("Loss sound finished. Returning to intro music.");
                 stopLossMusic();
                 playIntroMusic();
             });
+
             lossTimer.play();
         });
     }
@@ -222,11 +256,13 @@ public class SoundManager {
      */
     public void stopLossMusic() {
         if (lossTimer != null) {
+            logger.debug("Stopping loss timer.");
             lossTimer.stop();
             lossTimer = null;
         }
 
         if (lossMusicPlayer != null) {
+            logger.debug("Stopping and disposing loss music.");
             lossMusicPlayer.stop();
             lossMusicPlayer.dispose();
             lossMusicPlayer = null;
@@ -237,6 +273,8 @@ public class SoundManager {
      * Stops all music.
      */
     public void stopAllMusic() {
+        logger.info("Stopping all music.");
+
         stopAndDisposeIntroMusic();
         stopAndDisposeGameMusic();
         stopVictoryMusic();
@@ -250,14 +288,25 @@ public class SoundManager {
      * @param startSecond second to start from
      */
     private void playFromSecond(MediaPlayer mediaPlayer, double startSecond) {
+        if (mediaPlayer == null) {
+            logger.warn("Cannot play media from second {} because MediaPlayer is null.", startSecond);
+            return;
+        }
+
         Duration startTime = Duration.seconds(startSecond);
 
         mediaPlayer.setStartTime(startTime);
 
         mediaPlayer.setOnReady(() -> {
+            logger.debug("MediaPlayer is ready. Starting playback from second {}.", startSecond);
             mediaPlayer.seek(startTime);
             mediaPlayer.play();
         });
+
+        mediaPlayer.setOnError(() -> logger.error(
+                "MediaPlayer error occurred: {}",
+                mediaPlayer.getError() != null ? mediaPlayer.getError().getMessage() : "Unknown media error"
+        ));
     }
 
     /**
@@ -268,19 +317,30 @@ public class SoundManager {
      */
     private MediaPlayer createMediaPlayer(String resourcePath) {
         try {
+            logger.debug("Loading sound resource: {}", resourcePath);
+
             URL soundResource = getClass().getResource(resourcePath);
 
             if (soundResource == null) {
-                System.err.println("Sound file not found: " + resourcePath);
+                logger.error("Sound file not found: {}", resourcePath);
                 return null;
             }
 
             Media media = new Media(soundResource.toExternalForm());
-            return new MediaPlayer(media);
+            MediaPlayer mediaPlayer = new MediaPlayer(media);
+
+            mediaPlayer.setOnError(() -> logger.error(
+                    "Could not play sound resource {}. Error: {}",
+                    resourcePath,
+                    mediaPlayer.getError() != null ? mediaPlayer.getError().getMessage() : "Unknown media error"
+            ));
+
+            logger.debug("Sound resource loaded successfully: {}", resourcePath);
+
+            return mediaPlayer;
 
         } catch (Exception e) {
-            System.err.println("Could not load sound: " + resourcePath);
-            e.printStackTrace();
+            logger.error("Could not load sound: {}", resourcePath, e);
             return null;
         }
     }

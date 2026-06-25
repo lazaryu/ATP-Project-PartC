@@ -8,6 +8,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.ArcType;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.InputStream;
 
@@ -17,6 +19,8 @@ import java.io.InputStream;
  * and the solution path when requested.
  */
 public class MazeDisplayer extends Canvas {
+
+    private static final Logger logger = LogManager.getLogger(MazeDisplayer.class);
 
     private Maze maze;
     private Solution solution;
@@ -44,6 +48,7 @@ public class MazeDisplayer extends Canvas {
      * Constructor.
      */
     public MazeDisplayer() {
+        logger.info("Creating MazeDisplayer canvas.");
         loadImages();
     }
 
@@ -51,6 +56,8 @@ public class MazeDisplayer extends Canvas {
      * Loads images from the resources folder.
      */
     private void loadImages() {
+        logger.info("Loading MazeDisplayer images.");
+
         try {
             InputStream pacmanStream = getClass().getResourceAsStream(
                     "/com/example/atpprojectpartc/View/Images/Pacman_image.png"
@@ -58,6 +65,9 @@ public class MazeDisplayer extends Canvas {
 
             if (pacmanStream != null) {
                 pacmanImage = new Image(pacmanStream);
+                logger.info("Pac-Man image loaded successfully.");
+            } else {
+                logger.warn("Pac-Man image was not found. Default Pac-Man drawing will be used.");
             }
 
             InputStream rewardStream = getClass().getResourceAsStream(
@@ -66,10 +76,13 @@ public class MazeDisplayer extends Canvas {
 
             if (rewardStream != null) {
                 rewardImage = new Image(rewardStream);
+                logger.info("Reward image loaded successfully.");
+            } else {
+                logger.warn("Reward image was not found. Default goal drawing will be used.");
             }
 
         } catch (Exception e) {
-            System.out.println("Could not load images. Default drawing will be used.");
+            logger.error("Could not load MazeDisplayer images. Default drawing will be used.", e);
         }
     }
 
@@ -81,6 +94,14 @@ public class MazeDisplayer extends Canvas {
      * @param playerColumn player column
      */
     public void setMaze(Maze maze, int playerRow, int playerColumn) {
+        if (maze == null) {
+            logger.warn("setMaze was called with null maze.");
+            this.maze = null;
+            this.solution = null;
+            drawMaze();
+            return;
+        }
+
         boolean isNewMaze = this.maze != maze;
 
         this.maze = maze;
@@ -94,6 +115,18 @@ public class MazeDisplayer extends Canvas {
 
         if (isNewMaze) {
             pacmanRotationAngle = 0.0;
+
+            logger.info(
+                    "New maze set in MazeDisplayer. rows={}, columns={}, start={}, goal={}, playerRow={}, playerColumn={}",
+                    maze.getMaze().length,
+                    maze.getMaze()[0].length,
+                    maze.getStartPosition(),
+                    maze.getGoalPosition(),
+                    playerRow,
+                    playerColumn
+            );
+        } else {
+            logger.debug("Maze redrawn with existing maze instance.");
         }
 
         drawMaze();
@@ -106,6 +139,13 @@ public class MazeDisplayer extends Canvas {
      */
     public void setSolution(Solution solution) {
         this.solution = solution;
+
+        if (solution == null || solution.getSolutionPath() == null) {
+            logger.warn("Solution was set to null or has no path.");
+        } else {
+            logger.info("Solution set in MazeDisplayer. solutionLength={}", solution.getSolutionPath().size());
+        }
+
         drawMaze();
     }
 
@@ -113,6 +153,7 @@ public class MazeDisplayer extends Canvas {
      * Clears the solution from the maze display.
      */
     public void clearSolution() {
+        logger.info("Clearing solution from MazeDisplayer.");
         this.solution = null;
         drawMaze();
     }
@@ -124,6 +165,14 @@ public class MazeDisplayer extends Canvas {
      * @param newPlayerColumn new player column
      */
     public void updatePlayerPosition(int newPlayerRow, int newPlayerColumn) {
+        logger.debug(
+                "Updating player position in MazeDisplayer. old=({}, {}), new=({}, {})",
+                playerRow,
+                playerColumn,
+                newPlayerRow,
+                newPlayerColumn
+        );
+
         updatePacmanDirection(newPlayerRow, newPlayerColumn);
 
         this.playerRow = newPlayerRow;
@@ -295,12 +344,18 @@ public class MazeDisplayer extends Canvas {
             return;
         }
 
+        int parsedStates = 0;
+        int skippedStates = 0;
+
         for (AState state : solution.getSolutionPath()) {
             int[] position = parsePositionFromState(state);
 
             if (position == null) {
+                skippedStates++;
                 continue;
             }
+
+            parsedStates++;
 
             int row = position[0];
             int column = position[1];
@@ -322,6 +377,14 @@ public class MazeDisplayer extends Canvas {
                     y + cellHeight / 2 - dotSize / 2,
                     dotSize,
                     dotSize
+            );
+        }
+
+        if (skippedStates > 0) {
+            logger.debug(
+                    "Some solution states could not be parsed. parsedStates={}, skippedStates={}",
+                    parsedStates,
+                    skippedStates
             );
         }
     }
@@ -347,6 +410,7 @@ public class MazeDisplayer extends Canvas {
             String[] parts = text.split(",");
 
             if (parts.length < 2) {
+                logger.debug("Could not parse solution state because it has less than two parts: {}", state);
                 return null;
             }
 
@@ -356,6 +420,7 @@ public class MazeDisplayer extends Canvas {
             return new int[]{row, column};
 
         } catch (Exception e) {
+            logger.debug("Could not parse solution state: {}", state, e);
             return null;
         }
     }

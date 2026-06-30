@@ -1,0 +1,280 @@
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Top menu bar */
+.pacman-menu-bar {
+    -fx-background-color: #000000;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 0 0 2px 0;
+}
+
+.pacman-menu-bar .label {
+    -fx-text-fill: #ffd400;
+    -fx-font-weight: bold;
+}
+
+.menu-item .label {
+    -fx-text-fill: #ffd400;
+    -fx-font-weight: bold;
+}
+
+.context-menu {
+    -fx-background-color: #111111;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 2px;
+}
+
+.menu-item:focused {
+    -fx-background-color: #333333;
+}
+
+.menu:hover,
+.menu:showing {
+    -fx-background-color: #222222;
+}
+
+/* Start and setup screens with Pacman background */
+.pacman-screen {
+    -fx-background-image: url("Images/Pacman_start.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+    -fx-padding: 40px;
+}
+
+/* Dark transparent box above the image */
+.menu-card {
+    -fx-background-color: rgba(0, 0, 0, 0.68);
+    -fx-background-radius: 24px;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 3px;
+    -fx-border-radius: 24px;
+    -fx-padding: 35px 50px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.35), 20, 0.35, 0, 0);
+}
+
+.pacman-title {
+    -fx-font-size: 58px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.75), 14, 0.45, 0, 0);
+}
+
+.pacman-title-small {
+    -fx-font-size: 44px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.65), 12, 0.4, 0, 0);
+}
+
+.pacman-subtitle {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.55), 10, 0.4, 0, 0);
+}
+
+.form-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-min-width: 115px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.45), 8, 0.35, 0, 0);
+}
+
+/* Old TextField style, kept in case another screen still uses it */
+.input-field {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 3px;
+    -fx-padding: 8px;
+}
+
+/* Spinner for rows and columns */
+.dimension-spinner {
+    -fx-background-color: transparent;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 3px;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+}
+
+.dimension-spinner .text-field {
+    -fx-background-color: white;
+    -fx-text-fill: #222222;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 2px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 8px;
+}
+
+.dimension-spinner .increment-arrow-button {
+    -fx-background-color: #ffd400;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-background-radius: 0 14px 0 0;
+    -fx-border-radius: 0 14px 0 0;
+    -fx-cursor: hand;
+}
+
+.dimension-spinner .decrement-arrow-button {
+    -fx-background-color: #ffd400;
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+    -fx-background-radius: 0 0 14px 0;
+    -fx-border-radius: 0 0 14px 0;
+    -fx-cursor: hand;
+}
+
+.dimension-spinner .increment-arrow-button:hover {
+    -fx-background-color: #fff176;
+    -fx-background-radius: 0 14px 0 0;
+    -fx-border-radius: 0 14px 0 0;
+}
+
+.dimension-spinner .decrement-arrow-button:hover {
+    -fx-background-color: #fff176;
+    -fx-background-radius: 0 0 14px 0;
+    -fx-border-radius: 0 0 14px 0;
+}
+
+.dimension-spinner .increment-arrow,
+.dimension-spinner .decrement-arrow {
+    -fx-background-color: black;
+}
+
+/* Main menu buttons */
+.pacman-main-button {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: black;
+    -fx-background-color: #ffd400;
+    -fx-background-radius: 24px;
+    -fx-border-color: white;
+    -fx-border-width: 2px;
+    -fx-border-radius: 24px;
+    -fx-padding: 12px 42px;
+    -fx-cursor: hand;
+}
+
+.pacman-main-button:hover {
+    -fx-background-color: #fff176;
+    -fx-scale-x: 1.04;
+    -fx-scale-y: 1.04;
+}
+
+.pacman-secondary-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-background-color: #111111;
+    -fx-background-radius: 22px;
+    -fx-border-color: #ffd400;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-padding: 11px 35px;
+    -fx-cursor: hand;
+}
+
+.pacman-secondary-button:hover {
+    -fx-background-color: #222222;
+    -fx-scale-x: 1.04;
+    -fx-scale-y: 1.04;
+}
+
+.pacman-exit-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-color: #d62828;
+    -fx-background-radius: 22px;
+    -fx-padding: 11px 38px;
+    -fx-cursor: hand;
+}
+
+.pacman-exit-button:hover {
+    -fx-background-color: #ff3b3b;
+    -fx-scale-x: 1.04;
+    -fx-scale-y: 1.04;
+}
+
+/* Game screen */
+.game-screen {
+    -fx-background-color: linear-gradient(to bottom right, #050505, #101820);
+    -fx-padding: 10px;
+}
+
+.game-title {
+    -fx-font-size: 34px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffd400;
+    -fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.55), 12, 0.4, 0, 0);
+}
+
+.status-label {
+    -fx-font-size: 17px;
+    -fx-text-fill: white;
+}
+
+.game-button {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: black;
+    -fx-background-color: #ffd400;
+    -fx-background-radius: 12px;
+    -fx-padding: 8px 20px;
+    -fx-cursor: hand;
+}
+
+.game-button:hover {
+    -fx-background-color: #fff176;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
+.game-secondary-button {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-color: #455a64;
+    -fx-background-radius: 12px;
+    -fx-padding: 8px 20px;
+    -fx-cursor: hand;
+}
+
+.game-secondary-button:hover {
+    -fx-background-color: #607d8b;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
+.game-exit-button {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-background-color: #b3261e;
+    -fx-background-radius: 12px;
+    -fx-padding: 8px 20px;
+    -fx-cursor: hand;
+}
+
+.game-exit-button:hover {
+    -fx-background-color: #ff3b3b;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
+.maze-pane {
+    -fx-background-color: #000000;
+    -fx-border-color: #005dff;
+    -fx-border-width: 4px;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
